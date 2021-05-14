@@ -54,6 +54,7 @@
     "gulp-css-flip": "^0.4.0",
     "gulp-css-inline-images": "^0.1.1",
     "gulp-sass": "^4.1.0",
+    "gulp-sourcemaps": "^3.0.0",
     "gulp-util": "^3.0.7",
     "protractor": "^7.0.0",
     "streamqueue": "^1.1.1"

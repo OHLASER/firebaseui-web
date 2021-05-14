@@ -24,4 +24,4 @@ cd "$(dirname $(dirname "$0"))"
 
 cp -r dist demo/public
 cd demo
-firebase serve
+firebase serve --project oh-laser-my-page

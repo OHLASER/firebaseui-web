@@ -34,12 +34,9 @@ const glob = closureBuilder.globSupport();
 // $ gulp --compilation_level=WHITESPACE_ONLY
 const OPTIMIZATION_LEVEL = util.env.compilation_level ||
     'ADVANCED_OPTIMIZATIONS';
+// const OPTIMIZATION_LEVEL = util.env.compilation_level ||
+//    'WHITESPACE_ONLY';
 
-// For minified builds, wrap the output so we avoid leaking global variables.
-const OUTPUT_WRAPPER = OPTIMIZATION_LEVEL === 'WHITESPACE_ONLY' ?
-    '%output%' : '(function() { %output% }).apply(' +
-    'typeof global !== \'undefined\' ? global : typeof self !== \'undefined\' ' +
-    '? self : window );';
 
 // Provides missing dialogPolyfill on window in cjs environments.
 const DIALOG_POLYFILL = 'if(typeof window!==\'undefined\')' +
@@ -81,30 +78,11 @@ const ESM_IMPORT = ESM_DEPS.join(';') + ';';
 const ESM_EXPORT = 'var auth = firebaseui.auth;' +
     'export { auth } ;';
 
-// Adds the cjs module requirement and exports firebaseui.
-const NPM_MODULE_WRAPPER = OPTIMIZATION_LEVEL === 'WHITESPACE_ONLY' ?
-    'var firebase=require(\'firebase/app\');require(\'firebase/auth\');' +
-    DEFAULT_IMPORT_FIX + '%output%' + DIALOG_POLYFILL +
-    'module.exports=firebaseui;' :
-    '(function() { var firebase=require(\'firebase/app\');' +
-    'require(\'firebase/auth\');' + DEFAULT_IMPORT_FIX + '%output% ' +
-    DIALOG_POLYFILL + '})();' + 'module.exports=firebaseui;';
-
-// Adds the module requirement and exports firebaseui.
-const ESM_MODULE_WRAPPER = OPTIMIZATION_LEVEL === 'WHITESPACE_ONLY' ?
-    ESM_IMPORT + '%output%' +
-    ESM_DIALOG_POLYFILL + ESM_EXPORT :
-    ESM_IMPORT +
-    '(function() {' + '%output%' + '}).apply(' +
-    'typeof global !== \'undefined\' ? global : typeof self !== \'undefined\' ' +
-    '? self : window );' +
-    ESM_DIALOG_POLYFILL + ESM_EXPORT;
-
 // The path to Closure Compiler.
 const COMPILER_PATH = 'node_modules/google-closure-compiler-java/compiler.jar';
 
 // The path to the temporary directory where intermediate results are stored.
-const TMP_DIR = 'out';
+const TMP_ROOT_DIR = 'out';
 
 // The path to the temporary directory where intermediate results are stored.
 const DEST_DIR = 'dist';
@@ -131,22 +109,127 @@ const TYPES_FILE = './types/index.d.ts';
 // The externs directory files.
 const EXTERNS_FILES = './externs/*.js';
 
-// Compiles the Closure templates into JavaScript.
-gulp.task('build-soy', () => new Promise((resolve, reject) => {
-  closureBuilder.build({
+
+/**
+ * get soy file compile opion
+ */
+function getSoyCompileOption(id) {
+
+  let idStr = undefined
+  if (id == '') {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+
+  const result = {
     name: 'soy_files',
     srcs: glob([
-      'soy/*.soy'
+      `soy${idStr}/*.soy`
     ]),
-    out: TMP_DIR,
+    out: getSoyIntermidiateDirectory(id),
     options: {
       soy: {
         shouldGenerateGoogMsgDefs: true,
         bidiGlobalDir: 1
       }
     },
-  }, resolve);
-}));
+  }
+
+  return result
+}
+
+/**
+ * get soy compiler output directory
+ */
+function getSoyIntermidiateDirectory(id) {
+  let idStr = undefined
+  if ('' === id) {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  return `${TMP_ROOT_DIR}`
+}
+
+/**
+ * got soy compiler processed intermidiate directory
+ */
+function getSoyProcessedIntermidiateDirectory(id) {
+  let idStr = undefined
+  if ('' === id) {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  return `${TMP_ROOT_DIR}/soy${idStr}`
+}
+
+// For minified builds, wrap the output so we avoid leaking global variables.
+function getOutputWrapper(sourceMap) {
+  let result = undefined
+  if (OPTIMIZATION_LEVEL === 'WHITESPACE_ONLY'){
+    result = `%output%//# sourceMappingURL=${path.basename(sourceMap)}`
+  } else {
+    result = '(function() { %output% }).apply('
+      + 'typeof global !== \'undefined\' '
+      + '? global : typeof self !== \'undefined\' '
+      + '? self : window );'
+      + `//# sourceMappingURL=${path.basename(sourceMap)}`;
+  }
+  return result
+}
+
+
+
+// Adds the cjs module requirement and exports firebaseui.
+function getNpmModuleWrapper(sourceMap) {
+  let result = undefined
+  if (OPTIMIZATION_LEVEL === 'WHITESPACE_ONLY') {
+    result = 'var firebase=require(\'firebase/app\');'
+      + 'require(\'firebase/auth\');'
+      + DEFAULT_IMPORT_FIX
+      + '%output%'
+      + DIALOG_POLYFILL
+      + 'module.exports=firebaseui;'
+      + `//# sourceMappingURL=${path.basename(sourceMap)}`;
+
+  } else { 
+    result = '(function() { var firebase=require(\'firebase/app\');'
+      + 'require(\'firebase/auth\');'
+      + DEFAULT_IMPORT_FIX
+      + '%output% '
+      + DIALOG_POLYFILL
+      + '})();'
+      + 'module.exports=firebaseui;'
+      + `//# sourceMappingURL=${path.basename(sourceMap)}`;
+  }
+  return result
+}
+
+// Adds the module requirement and exports firebaseui.
+function getEsmModuleWrapper(sourceMap) {
+  let result = undefined
+  if (OPTIMIZATION_LEVEL === 'WHITESPACE_ONLY') {
+    reuslt = ESM_IMPORT
+      + '%output%'
+      + ESM_DIALOG_POLYFILL
+      + ESM_EXPOR
+      + `//# sourceMappingURL=${path.basename(sourceMap)}`
+  } else {
+    result = ESM_IMPORT
+      + '(function() {'
+      + '%output%' 
+      + '}).apply('
+      + 'typeof global !== \'undefined\' '
+      + '? global : typeof self !== \'undefined\' '
+      + '? self : window );'
+      + ESM_DIALOG_POLYFILL + ESM_EXPORT
+      + `//# sourceMappingURL=${path.basename(sourceMap)}`;
+  }
+  return result
+}
+
 
 /**
  * Invokes Closure Compiler.
@@ -158,6 +241,7 @@ gulp.task('build-soy', () => new Promise((resolve, reject) => {
 function compile(srcs, out, args) {
   // Get the compiler arguments, using the defaults if not specified.
   const combinedArgs = Object.assign({}, COMPILER_DEFAULT_ARGS, args);
+
   return gulp
       .src(srcs)
       .pipe(closureCompiler({
@@ -177,16 +261,8 @@ function getLocaleForFileName(locale) {
   return locale.toLowerCase().replace(/-/g, '_');
 }
 
-/**
- * Gets the path to the temporary JS file that contains all FirebaseUI code
- * but no external dependencies.
- * @param {string} locale
- * @return {string} The path of the temporary JS file.
- */
-function getTmpJsPath(locale) {
-  const localeForFileName = getLocaleForFileName(locale);
-  return `${TMP_DIR}/firebaseui__${localeForFileName}.js`;
-}
+
+
 
 /**
  * Repeats a gulp task for all locales.
@@ -205,8 +281,8 @@ function repeatTaskForAllLocales(taskName, dependencies, operation) {
     const localeTaskName = replaceTokens(taskName);
     const localeDependencies = dependencies.map(replaceTokens);
     gulp.task(localeTaskName, gulp.series(
-        gulp.parallel.apply(null, localeDependencies),
-        () => operation(locale)
+        gulp.parallel(...localeDependencies),
+        (cb) => operation(cb, locale)
     ));
     return localeTaskName;
   });
@@ -217,7 +293,22 @@ function repeatTaskForAllLocales(taskName, dependencies, operation) {
  * @param {string} locale
  * @return {*} A stream that finishes when compilation finishes.
  */
-function buildFirebaseUiJs(locale) {
+function buildFirebaseUiJs(locale, id) {
+  const outputPath = getTmpJsPath(locale, id)
+  const sourceMapName = getSourceMapName(outputPath)
+  const flags = getFireBaseCompilationFlags(locale, outputPath, id)
+  const sources = getFireBaseSourceFiles(id) 
+  return compile(sources, outputPath, flags);
+}
+
+/**
+ * get firebase compilation flags
+ */
+function getFireBaseCompilationFlags(
+  locale, outputPath, id) {
+
+  const sourceMapName = getSourceMapName(outputPath)
+  
   const flags = {
     closure_entry_point: 'firebaseui.auth.exports',
     define: `goog.LOCALE='${locale}'`,
@@ -227,7 +318,7 @@ function buildFirebaseUiJs(locale) {
       'node_modules/firebase/externs/firebase-client-auth-externs.js'
     ],
     only_closure_dependencies: true,
-    output_wrapper: OUTPUT_WRAPPER,
+    output_wrapper: getOutputWrapper(sourceMapName),
 
     // This is required to support @export annotation to expose external
     // properties.
@@ -240,14 +331,24 @@ function buildFirebaseUiJs(locale) {
   if (locale !== DEFAULT_LOCALE) {
     flags.translations_file = `translations/${locale}.xtb`;
   }
-  return compile([
+  return flags
+}
+
+/**
+ * firebase source files
+ */
+function getFireBaseSourceFiles(id) {
+  const result = [
     'node_modules/google-closure-templates/javascript/soyutils_usegoog.js',
     'node_modules/google-closure-library/closure/goog/**/*.js',
     'node_modules/google-closure-library/third_party/closure/goog/**/*.js',
-    `${TMP_DIR}/**/*.js`,
+    `${getSoyProcessedIntermidiateDirectory(id)}/**/*.js`,
     'javascript/**/*.js'
-  ], getTmpJsPath(locale), flags);
+  ]
+  return result
 }
+
+
 
 /**
  * Concatenates the core FirebaseUI JS with its external dependencies, and
@@ -258,122 +359,212 @@ function buildFirebaseUiJs(locale) {
  * @param {?Array<string>=} dependencies The dependencies to concatenate.
  * @return {*} A stream that ends when compilation finishes.
  */
-function concatWithDeps(locale, outBaseName, outputWrapper, dependencies = []) {
+function concatWithDeps(cb, locale, outBaseName,
+  outputWrapper, dependencies = [], id) {
   const localeForFileName = getLocaleForFileName(locale);
   // Get a list of the FirebaseUI JS and its dependencies.
-  const srcs = dependencies.concat([getTmpJsPath(locale)]);
-  const outputPath = `${DEST_DIR}/${outBaseName}__${localeForFileName}.js`;
-  return compile(srcs, outputPath, {
-    compilation_level: 'WHITESPACE_ONLY',
-    output_wrapper: outputWrapper
-  });
+  const srcs = dependencies.concat(getFireBaseSourceFiles(id));
+
+  const outputPaths = getOutputPaths(outBaseName, locale, id)
+
+  const promises = []
+  outputPaths.forEach(outputPath => { 
+    const sourceMapName = getSourceMapName(outputPath)
+    const wrapper = outputWrapper(sourceMapName)
+    const flags = Object.assign({}, 
+      getFireBaseCompilationFlags(locale, outputPath, id), {
+      compilation_level: OPTIMIZATION_LEVEL, 
+      output_wrapper: wrapper
+    })
+     
+    const st = compile(srcs, outputPath, flags)
+    promises.push(new Promise((resolve, reject) => {
+      st.once('end', st => {
+        resolve(st)
+      })  
+      st.once('error', error => {
+        connsole.log('error occured')
+        reject(error)
+      })
+    }))
+  })
+  Promise.allSettled(promises).then(responses => {
+    cb()
+  })
 }
 
 /**
- * Creates the default FirebaseUI binaries for basic usage without
- * localization. For example, it copies firebaseui__en.js to firebaseui.js.
- * @param {string} fileName
- * @return {!Promise} A promise that resolves on completion.
+ * source map name
  */
-function makeDefaultFile(fileName) {
-  const localeForFileName = getLocaleForFileName(DEFAULT_LOCALE);
-  const path = `${DEST_DIR}/${fileName}__${localeForFileName}.js`;
-  if (fse.existsSync(path)) {
-    return fse.copy(path, `${DEST_DIR}/${fileName}.js`);
-  }
+function getSourceMapName(outputPath) {
+  return `${outputPath}.map`
 }
+
+/**
+ *
+ */
+function getOutputPaths(outBaseName, locale, id) {
+  const localeForFileName = getLocaleForFileName(locale);
+  if (id == '') {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  const result = [
+    `${DEST_DIR}/${outBaseName}${idStr}__${localeForFileName}.js`
+  ];
+  if (locale == DEFAULT_LOCALE) {
+    result.push(`${DEST_DIR}/${outBaseName}${idStr}.js`)
+  }
+  return result
+}
+
 
 // Generates the typescript definitions.
 gulp.task('build-ts',
-    () => gulp.src(TYPES_FILE).pipe(gulp.dest(`${DEST_DIR}/`)));
+  cb => {
+    const st = gulp.src(TYPES_FILE).pipe(gulp.dest(`${DEST_DIR}/`))
+    st.once('end', st=> {
+      cb()
+    })
+  });
 
 // Generates the externs definitions.
 gulp.task('build-externs',
-    () => gulp.src(EXTERNS_FILES).pipe(gulp.dest(`${DEST_DIR}/externs/`)));
+  cb => {
+    const st = gulp.src(EXTERNS_FILES).pipe(
+      gulp.dest(`${DEST_DIR}/externs/`));
+    st.once('end', st => {
+      cb()
+    })
+  });
 
-// Builds the core FirebaseUI JS. Generates the gulp tasks
-// build-firebaseui-js-de, build-firebaseui-js-fr, etc.
-repeatTaskForAllLocales(
-    'build-firebaseui-js-$',
-    ['build-externs', 'build-ts', 'build-soy'],
-    buildFirebaseUiJs
-);
 
-// Bundles the FirebaseUI JS with its dependencies as a NPM module. This builds
-// the NPM module for all languages.
-repeatTaskForAllLocales(
-    'build-npm-$', ['build-firebaseui-js-$'],
-    (locale) => concatWithDeps(locale, 'npm', NPM_MODULE_WRAPPER, CJS_DEPS));
+/**
+ * register firebase tasks
+ */
+function registerTasks(id) {
 
-// Bundles the FirebaseUI JS with its dependencies as a ESM module. This builds
-// the NPM module for all languages.
-repeatTaskForAllLocales(
-    'build-esm-$', ['build-firebaseui-js-$'],
-    (locale) => concatWithDeps(locale, 'esm', ESM_MODULE_WRAPPER));
+  let idStr = undefined
+  if (id === '') {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  const soyTaskStr = `build-soy${idStr}`
 
-// Bundles the FirebaseUI JS with its dependencies for all locales.
-// Generates the gulp tasks build-js-de, build-js-fr, etc.
-const buildJsTasks = repeatTaskForAllLocales(
-    'build-js-$', ['build-firebaseui-js-$'],
-    (locale) => concatWithDeps(locale, 'firebaseui', OUTPUT_WRAPPER, CJS_DEPS));
+  // Concatenates and minifies the CSS sources for LTR languages.
+  gulp.task(`build-css${idStr}`, (cb) => buildCss(cb, false, id));
 
-// Builds the final JS file for the default language.
-gulp.task('build-js', gulp.series(
-    'build-js-' + DEFAULT_LOCALE,
-    () => makeDefaultFile('firebaseui')
-));
+  // Concatenates and minifies the CSS sources for RTL languages.
+  gulp.task(`build-css-rtl${idStr}`, (cb) => buildCss(cb, true, id));
 
-// Builds the final JS file for all supported languages.
-gulp.task('build-all-js', gulp.series(
-    gulp.parallel.apply(null, buildJsTasks),
-    () => makeDefaultFile('firebaseui')
-));
+  // Compiles the Closure templates into JavaScript.
+  gulp.task(soyTaskStr, (cb) => {
+    closureBuilder.build(getSoyCompileOption(id),
+      (erros, warnings, files, results) => {
+        cb() 
+      });
 
-// Builds the NPM module for the default language.
-gulp.task('build-npm', gulp.series(
-    'build-npm-' + DEFAULT_LOCALE,
-    () => makeDefaultFile('npm')
-));
+  });
 
-// Builds the ESM module for the default language.
-gulp.task('build-esm', gulp.series(
-    'build-esm-' + DEFAULT_LOCALE,
-    () => makeDefaultFile('esm')
-));
+  const uiDependencies = ['build-externs', 'build-ts', soyTaskStr]
+
+  // Builds the core FirebaseUI JS. Generates the gulp tasks
+  // build-firebaseui-js-de, build-firebaseui-js-fr, etc.
+  repeatTaskForAllLocales(
+      `build-firebaseui-js${idStr}-$`,
+      uiDependencies,
+      (cb, locale) => concatWithDeps(
+        cb, locale, 'firebaseui', getOutputWrapper, 
+        [], id));
+
+  // Bundles the FirebaseUI JS with its dependencies as a NPM module.
+  // This builds the NPM module for all languages.
+  const buildNpmTasks = repeatTaskForAllLocales(
+      `build-npm${idStr}-$`, uiDependencies,
+      (cb, locale) => concatWithDeps(
+        cb, locale, 'npm', getNpmModuleWrapper, 
+        CJS_DEPS, id));
+
+  // Bundles the FirebaseUI JS with its dependencies as a ESM module.
+  // This builds the NPM module for all languages.
+  const buildEsmTasks = repeatTaskForAllLocales(
+      `build-esm${idStr}-$`, uiDependencies,
+      (cb, locale) => concatWithDeps(
+        cb, locale, 'esm', getEsmModuleWrapper,
+        [], id));
+
+  // Bundles the FirebaseUI JS with its dependencies for all locales.
+  // Generates the gulp tasks build-js-de, build-js-fr, etc.
+  const buildJsTasks = repeatTaskForAllLocales(
+      `build-js${idStr}-$`, uiDependencies,
+      (cb, locale) => concatWithDeps(
+        cb, locale, 'firebaseui', getOutputWrapper,
+        CJS_DEPS, id));
+
+
+  // Builds the final JS file for the default language.
+  gulp.task(`build-js${idStr}`,
+      gulp.parallel(`build-js${idStr}-${DEFAULT_LOCALE}`));
+
+
+  // Builds the final JS file for all supported languages.
+  gulp.task(`build-all-js${idStr}`, 
+      gulp.parallel(...buildJsTasks));
+
+  // Builds the NPM module for the default language.
+  gulp.task(`build-npm${idStr}`, 
+      gulp.parallel(`build-npm${idStr}-${DEFAULT_LOCALE}`));
+
+  // Builds the ESM module for the default language.
+  gulp.task(`build-esm${idStr}`,
+      gulp.parallel(`build-esm${idStr}-${DEFAULT_LOCALE}`));
+
+}
+
+registerTasks('') 
+registerTasks('1') 
 
 /**
  * Builds the CSS for FirebaseUI.
  * @param {boolean} isRtl Whether to build in right-to-left mode.
  * @return {*} A stream that finishes when compilation finishes.
  */
-function buildCss(isRtl) {
-  const mdlSrcs = gulp.src('stylesheet/mdl.scss')
+function buildCss(cb, isRtl, id) {
+  const mdlSrcs = gulp.src('stylesheet-common/mdl.scss')
       .pipe(sass.sync().on('error', sass.logError))
       .pipe(cssInlineImages({
         webRoot: 'node_modules/material-design-lite/src',
       }));
   const dialogPolyfillSrcs = gulp.src(
       'node_modules/dialog-polyfill/dialog-polyfill.css');
-  let firebaseSrcs = gulp.src('stylesheet/*.css');
+  let idStr = undefined
+  if (id == '') {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  let firebaseSrcs = gulp.src(`stylesheet${idStr}/*.css`);
 
   // Flip left/right, ltr/rtl for RTL languages.
   if (isRtl) {
     firebaseSrcs = firebaseSrcs.pipe(flip.gulp());
   }
 
-  const outFile = isRtl ? 'firebaseui-rtl.css' : 'firebaseui.css';
-  return streamqueue({objectMode: true},
+  const outFile = isRtl ?
+    `firebaseui${idStr}-rtl.css` :
+    `firebaseui${idStr}.css`;
+  const st = streamqueue({objectMode: true},
       mdlSrcs, dialogPolyfillSrcs, firebaseSrcs)
       .pipe(concatCSS(outFile))
       .pipe(cleanCSS())
       .pipe(gulp.dest(DEST_DIR));
+
+  st.once('end', st=> cb()) 
 }
 
-// Concatenates and minifies the CSS sources for LTR languages.
-gulp.task('build-css', () => buildCss(false));
 
-// Concatenates and minifies the CSS sources for RTL languages.
-gulp.task('build-css-rtl', () => buildCss(true));
 
 // Creates a webserver that serves all files from the root of the package.
 gulp.task('serve', () => {
@@ -383,18 +574,18 @@ gulp.task('serve', () => {
 });
 
 // Deletes intermediate files.
-gulp.task('clean', () => fse.remove(TMP_DIR));
+gulp.task('clean', () => fse.remove(TMP_ROOT_DIR));
 
 // Executes the basic tasks for the default language.
 gulp.task('default', gulp.series(
-    'build-externs', 'build-ts', 'build-js',
+    'build-js', 'build-js-1',
     'build-npm', 'build-esm', 'build-css', 'build-css-rtl',
-    'clean'
+    'build-npm-1', 'build-esm-1', 'build-css-1', 'build-css-rtl-1',
 ));
 
 // Builds everything (JS for all languages, both LTR and RTL CSS).
 gulp.task('build-all', gulp.series(
-    'build-externs', 'build-ts', 'build-all-js',
+    'build-all-js-1',
     'build-npm', 'build-esm', 'build-css', 'build-css-rtl',
-    'clean'
+    'build-npm-1', 'build-esm-1', 'build-css-1', 'build-css-rtl-1'
 ));
