@@ -21,7 +21,10 @@
     "build": "gulp",
     "build-all": "gulp build-all",
     "build-soy": "gulp build-soy",
-    "demo": "npm run build && ./buildtools/run_demo.sh",
+    "build-demo": "gulp build-demo",
+    "build-demo-css": "gulp build-demo-css",
+    "demo-css": "npm run build-demo-css && ./buildtools/run_demo.sh",
+    "demo": "npm run build-demo && ./buildtools/run_demo.sh",
     "test": "npm run build && npm run generate-test-files && ./buildtools/run_tests.sh",
     "serve": "npm run build && npm run generate-test-files && gulp serve",
     "generate-test-files": "./buildtools/generate_test_files.sh",
@@ -38,6 +41,7 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
+    "@popperjs/core": "^2.9.2",
     "closure-builder": "^2.3.7",
     "firebase": "^8.2.4",
     "firebase-tools": "^9.3.0",
@@ -60,6 +64,7 @@
     "streamqueue": "^1.1.1"
   },
   "dependencies": {
+    "bootstrap": "^5.0.1",
     "dialog-polyfill": "^0.4.7",
     "material-design-lite": "^1.2.0"
   },

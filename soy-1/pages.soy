@@ -1298,22 +1298,22 @@
  * Renders the list of supported sign-in providers.
  */
 {template .providerSignIn}
-  {@param providerConfigs: list<[providerId:string, providerName:string|null, fullLabel:string|null,
+  {@param providerConfigs: list<[providerId:string, widgetId:string, providerName:string|null, fullLabel:string|null,
       buttonColor:string|null, iconUrl: string|null]>} /** List of supported IdP configs. */
   <div class="firebaseui-container firebaseui-page-provider-sign-in{sp}
       firebaseui-id-page-provider-sign-in firebaseui-use-spinner">
     <div class="firebaseui-card-content">
-      <form onsubmit="return false;">
-        <ul class="firebaseui-idp-list">
-          {foreach $providerConfig in $providerConfigs}
-            <li class="firebaseui-list-item">
-              {call firebaseui.auth.soy2.element.idpButton}
-                {param providerConfig: $providerConfig /}
-              {/call}
-            </li>
-          {/foreach}
-        </ul>
-      </form>
+      <div tabindex="0" class="firebaseui-idp-container">
+        {foreach $providerConfig in $providerConfigs}
+          {call firebaseui.auth.soy2.element.idpButton}
+            {param providerConfig: $providerConfig /}
+          {/call}
+        {/foreach}
+      </div>
+      <div class="firebaseui-idp-commands">
+        {call firebaseui.auth.soy2.element.idpSignIn}
+        {/call}
+      </div>
     </div>
     <div class="firebaseui-card-footer firebaseui-provider-sign-in-footer">
       {call firebaseui.auth.soy2.element.fullMessageTosPp data="all" /}
@@ -1507,3 +1507,4 @@
     </form>
   </div>
 {/template}
+/* vi: se ts=2 sw=2 et: */

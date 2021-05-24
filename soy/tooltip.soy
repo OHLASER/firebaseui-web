@@ -1,0 +1,79 @@
+{namespace firebaseui.auth.soy2.tooltip autoescape="strict"}
+/**
+ * idp button tool tip
+ */
+{template .idpButtonTooltip}
+  {@param? providerConfig: [
+      providerId: string, 
+      providerName: string|null,
+      fullLabel: string| null]}
+  <div class="tooltip">
+    {if $providerConfig.providerId == 'password'}
+      {if $providerConfig.fullLabel}
+        {$providerConfig.fullLabel}
+      {elseif $providerConfig.providerName}
+        {msg desc="Labels for sign-in buttons, long version"}
+          Sign in with{sp}
+          {call .idpName data="all" /}
+        {/msg}
+      {else}
+        {msg desc="Label for a button to sign in with an email account that requires a password.  The long version"}
+          Sign in with email
+        {/msg}
+      {/if}
+    {elseif $providerConfig.providerId == 'phone'}
+      {if $providerConfig.fullLabel}
+        {$providerConfig.fullLabel}
+      {elseif $providerConfig.providerName}
+        {msg desc="Labels for sign-in buttons, long version"}
+          Sign in with{sp}{call .idpName data="all" /}
+        {/msg}
+      {else}
+        {msg desc="Label for a button to sign in with phone number. The long version"}
+          Sign in with phone
+        {/msg}
+      {/if}
+    {elseif $providerConfig.providerId == 'anonymous'}
+      {if $providerConfig.fullLabel}
+        {$providerConfig.fullLabel}
+      {elseif $providerConfig.providerName}
+        {msg desc="Labels for sign-in buttons, long version"}
+          Sign in with{sp}{call .idpName data="all" /}
+        {/msg}
+      {else}
+        {msg desc="Label for a button to continue as a guest user.  The long version"}
+          Continue as guest
+        {/msg}
+      {/if}
+    {else}
+      {if $providerConfig.fullLabel}
+        {$providerConfig.fullLabel}
+      {else}
+        {msg desc="Labels for sign-in buttons, long version"}
+          Sign in with{sp}{call .idpName data="all" /}
+        {/msg}
+      {/if}
+    {/if}
+  </div>
+{/template}
+
+/**
+ * Determines the IdP display name.
+ * The list should match the supported provider IDs in Firebase Auth.
+ */
+{template .idpName kind="text"}
+  {@param? providerConfig: [providerId:string|null, providerName:string|null, fullLabel:string|null]} /** The IdP provider config. */
+  {if $providerConfig.providerName}
+    {$providerConfig.providerName}
+  {elseif $ij.defaultProviderNames[$providerConfig.providerId]}
+    {$ij.defaultProviderNames[$providerConfig.providerId]}
+  {elseif $providerConfig.providerId and strIndexOf($providerConfig.providerId, 'saml.') == 0}
+    {strSub($providerConfig.providerId, 5)}
+  {elseif $providerConfig.providerId and strIndexOf($providerConfig.providerId, 'oidc.') == 0}
+    {strSub($providerConfig.providerId, 5)}
+  {else}
+    {$providerConfig.providerId}
+  {/if}
+{/template}
+
+/* vi: se ts=2 sw=2 et: */

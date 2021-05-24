@@ -17,13 +17,27 @@
 goog.module('firebaseui.auth.ui.page.ProviderSignIn');
 goog.module.declareLegacyNamespace();
 
+
 const Base = goog.require('firebaseui.auth.ui.page.Base');
 const DomHelper = goog.requireType('goog.dom.DomHelper');
 const idps = goog.require('firebaseui.auth.ui.element.idps');
 const page = goog.require('firebaseui.auth.soy2.page');
+const TooltipMgr = goog.require(
+  'firebaseui.auth.ui.adopter.ProviderTooltipMgr') 
+const RadioButtons = goog.require(
+  'firebaseui.auth.ui.adopter.RadioButtons')
 
 /** UI component that displays a list of supported identity providers. */
 class ProviderSignIn extends Base {
+
+
+  /**
+   * get sign in button
+   */
+  get signInButton() {
+    return this.getElementByClass('firebaseui-id-sign-in') 
+  }
+
   /**
    * @param {function(string)} onIdpClick Callback to invoke when the user
    *     clicks one IdP button.
@@ -38,34 +52,61 @@ class ProviderSignIn extends Base {
   constructor(
       onIdpClick, providerConfigs, opt_tosCallback, opt_privacyPolicyCallback,
       domHelper = undefined) {
+    
     super(
         page.providerSignIn,
-        {providerConfigs: providerConfigs}, domHelper, 'providerSignIn', {
+        { providerConfigs }, domHelper, 'providerSignIn', {
           tosCallback: opt_tosCallback,
           privacyPolicyCallback: opt_privacyPolicyCallback,
         });
+    this.tooltipMgr_ = new TooltipMgr()
+    this.radioButtons_ = new RadioButtons()
     this.onIdpClick_ = onIdpClick;
+    this.activeChanged_ = null
   }
 
   /** @override */
   enterDocument() {
-    this.initIdpList(this.onIdpClick_);
+    idps.initIdpList.bind(this)(this.onIdpClick_);
+
+    const self = this
+    this.activeChanged_ = (event) => { 
+      self.onActiveRadioChanged(event)
+    }
+    this.tooltipMgr_.bind(
+      this, this.templateData_.providerConfigs, this.injectedData_)
     super.enterDocument();
+    this.radioButtons_.bind(this,
+      '.firebaseui-idp-container',
+      '.firebaseui-idp-container .firebaseui-idp-radio')
+    this.radioButtons_.addEventListener('active', this.activeChanged_)
   }
 
   /** @override */
   disposeInternal() {
+
+    this.radioButtons_.removeEventListener('active', this.activeChanged_)
+    this.radioButtons_.unbind()
+    this.tooltipMgr_.unbind(this)
     this.onIdpClick_ = null;
+    this.activeChanged_ = null
     super.disposeInternal();
+  }
+
+
+  /**
+   * handle radio changed
+   */
+  onActiveRadioChanged(event) {
+    if ('active' == event.type) {
+      const signInButton = this.signInButton
+      if (signInButton) {
+        signInButton.disabled = newElement ? false : true
+      } 
+    }
   }
 }
 
-goog.mixin(
-    ProviderSignIn.prototype,
-    /** @lends {ProviderSignIn.prototype} */
-    {
-      // For idps.
-      initIdpList: idps.initIdpList,
-    });
 
 exports = ProviderSignIn;
+// vi: se ts=2 sw=2 et:

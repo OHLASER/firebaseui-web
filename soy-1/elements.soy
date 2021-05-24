@@ -123,36 +123,12 @@
  * Renders an identity provider button.
  */
 {template .idpButton}
-  {@param? providerConfig: [providerId:string, providerName:string|null, fullLabel:string|null,
-      buttonColor:string|null, iconUrl: string|null]} /** The IdP provider config. */
-  <button
-      class="firebaseui-idp-button mdl-button mdl-js-button mdl-button--raised{sp}
-             {call .idpClass_ data="all" /} firebaseui-id-idp-button"
-      data-provider-id="{$providerConfig.providerId}"
-      style="background-color:{call .idpColor_ data="all" /}">
-    <span class="firebaseui-idp-icon-wrapper">
-      <img
-          class="firebaseui-idp-icon"
-          alt=""
-          src="{call .idpLogo_ data="all" /}">
-    </span>
-    {if $providerConfig.providerId == 'password'}
-      <span class="firebaseui-idp-text firebaseui-idp-text-long">
-        {if $providerConfig.fullLabel}
-          {$providerConfig.fullLabel}
-        {elseif $providerConfig.providerName}
-          {msg desc="Labels for sign-in buttons, long version"}
-            Sign in with{sp}
-            {call .idpName data="all" /}
-          {/msg}
-        {else}
-          {msg desc="Label for a button to sign in with an email account that requires a password.
-              The long version"}
-            Sign in with email
-          {/msg}
-        {/if}
-      </span>
-      <span class="firebaseui-idp-text firebaseui-idp-text-short">
+  {@param? providerConfig: [providerId:string, providerName:string|null, 
+      iconUrl: string|null]} /** The IdP provider config. */
+    <div 
+      class="tooltip-owner firebaseui-idp-button firebaseui-idp-radio {call .idpClass_ data="all"/}" data-provider-id="{$providerConfig.providerId}">
+
+      {if $providerConfig.providerId == 'password'}
         {if $providerConfig.providerName}
           {$providerConfig.providerName}
         {else}
@@ -161,24 +137,7 @@
             Email
           {/msg}
         {/if}
-      </span>
-    {elseif $providerConfig.providerId == 'phone'}
-      <span class="firebaseui-idp-text firebaseui-idp-text-long">
-        {if $providerConfig.fullLabel}
-          {$providerConfig.fullLabel}
-        {elseif $providerConfig.providerName}
-          {msg desc="Labels for sign-in buttons, long version"}
-            Sign in with{sp}
-            {call .idpName data="all" /}
-          {/msg}
-        {else}
-          {msg desc="Label for a button to sign in with phone number.
-              The long version"}
-            Sign in with phone
-          {/msg}
-        {/if}
-      </span>
-      <span class="firebaseui-idp-text firebaseui-idp-text-short">
+      {elseif $providerConfig.providerId == 'phone'}
         {if $providerConfig.providerName}
           {$providerConfig.providerName}
         {else}
@@ -187,24 +146,7 @@
             Phone
           {/msg}
         {/if}
-      </span>
-    {elseif $providerConfig.providerId == 'anonymous'}
-      <span class="firebaseui-idp-text firebaseui-idp-text-long">
-        {if $providerConfig.fullLabel}
-          {$providerConfig.fullLabel}
-        {elseif $providerConfig.providerName}
-          {msg desc="Labels for sign-in buttons, long version"}
-            Sign in with{sp}
-            {call .idpName data="all" /}
-          {/msg}
-        {else}
-          {msg desc="Label for a button to continue as a guest user.
-              The long version"}
-            Continue as guest
-          {/msg}
-        {/if}
-      </span>
-      <span class="firebaseui-idp-text firebaseui-idp-text-short">
+      {elseif $providerConfig.providerId == 'anonymous'}
         {if $providerConfig.providerName}
           {$providerConfig.providerName}
         {else}
@@ -213,29 +155,31 @@
             Guest
           {/msg}
         {/if}
-      </span>
-    {else}
-      <span class="firebaseui-idp-text firebaseui-idp-text-long">
-        {if $providerConfig.fullLabel}
-          {$providerConfig.fullLabel}
-        {else}
-          {msg desc="Labels for sign-in buttons, long version"}
-            Sign in with{sp}
-            {call .idpName data="all" /}
-          {/msg}
-        {/if}
-      </span>
-      <span class="firebaseui-idp-text firebaseui-idp-text-short">
+      {else}
         {if $providerConfig.providerName}
           {$providerConfig.providerName}
         {else}
           {call .idpName data="all" /}
         {/if}
-      </span>
+      {/if}
+  </div>
+{/template}
+
+/**
+ * render sign in
+ */
+{template .idpSignIn}
+  {@param? label: string} /** Label of the button, defaulting to "Next" if not specified. */
+  <button class="firebaseui-id-sign-in">
+    {if $label}
+      {$label}
+    {else}
+      {msg desc="Label of the button that takes the user to the next step in the sign-in flow."}
+        Sign in
+      {/msg}
     {/if}
   </button>
 {/template}
-
 
 /**
  * Renders a submit button.
@@ -636,8 +580,8 @@
  * The list should match the supported provider IDs in Firebase Auth.
  */
 {template .idpName kind="text"}
-  {@param? providerConfig: [providerId:string|null, providerName:string|null, fullLabel:string|null,
-      buttonColor:string|null, iconUrl: string|null]} /** The IdP provider config. */
+  {@param? providerConfig: [providerId:string|null, providerName:string|null,
+      iconUrl: string|null]} /** The IdP provider config. */
   {if $providerConfig.providerName}
     {$providerConfig.providerName}
   {elseif $ij.defaultProviderNames[$providerConfig.providerId]}
@@ -657,8 +601,8 @@
  * The list should match the supported provider IDs in Firebase Auth.
  */
 {template .idpClass_ kind="text"}
-  {@param? providerConfig: [providerId:string, providerName:string|null, fullLabel:string|null,
-      buttonColor:string|null, iconUrl: string|null]} /** The IdP provider config. */
+  {@param? providerConfig: [providerId:string, providerName:string|null,
+      iconUrl: string|null]} /** The IdP provider config. */
   {switch $providerConfig.providerId}
     {case 'google.com'}
       firebaseui-idp-google
@@ -765,3 +709,4 @@
   </button>
 {/template}
 
+/* vi: se ts=2 sw=2 et: */
