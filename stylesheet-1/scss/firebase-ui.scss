@@ -799,5 +799,15 @@ div.firebaseui-idp-button {
   text-align: justify;
 }
 
+.firebaseui.tooltip {
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .5s .5s;
+  &.show {
+    transition: opacity .5s .5s;
+    pointer-events: auto;
+    visibility: visible;
+  }
+}
 
 /* vi: se ts=2 sw=2 et: */
