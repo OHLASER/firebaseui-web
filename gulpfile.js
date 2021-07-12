@@ -25,8 +25,8 @@ const path = require('path');
 const sass = require('gulp-sass');
 const streamqueue = require('streamqueue');
 const util = require('gulp-util');
-
 const glob = closureBuilder.globSupport();
+const child_proc = require('child_process')
 
 // The optimization level for the JS compiler.
 // Valid levels: WHITESPACE_ONLY, SIMPLE_OPTIMIZATIONS, ADVANCED_OPTIMIZATIONS.
@@ -349,8 +349,47 @@ function getLocaleForFileName(locale) {
   return locale.toLowerCase().replace(/-/g, '_');
 }
 
+function mergeXtb(cb, locale) {
+  const transPath = path.join('./', 'translations', `${locale}.xtb`) 
+  const xtbgenPath = path.join('./', 'tools', 'XtbGeneratorRunner')
+  const outputPath = path.join('./', 'translations',  `${locale}.xtb`)
 
+  let jsFiles = [] 
+  glob([
+    './javascript/**/*.js',
+    './out/**/*.js'
+  ]).forEach(elem => {
+    if (!elem.endsWith('_test.js')) {
+      jsFiles.push(elem)
+    }
+  })
+  jsFiles = jsFiles.map(elem => `--js '${elem}'`) 
 
+  const commands = [
+    `"${xtbgenPath}"`,
+    `--lang ${locale}`,
+    `--translations_file ${transPath}`,
+    `--xtb_output_file ${outputPath}`,
+    ...jsFiles
+  ]
+
+  const cmdStr = commands.join(' ')
+  child_proc.exec(cmdStr, (err, stdout, stderr) => {
+    
+    if (stderr.length > 0) {
+      console.log(stderr)
+    }
+    if (stdout.length > 0) {
+      console.log(stdout)
+    }
+
+    cb()
+  })
+}
+
+const taskNames = repeatTaskForAllLocales('merge-xtb-$', [], mergeXtb) 
+
+gulp.task('merge-xtb', gulp.parallel(taskNames))
 
 /**
  * Repeats a gulp task for all locales.
@@ -367,11 +406,15 @@ function repeatTaskForAllLocales(taskName, dependencies, operation) {
     // Convert build-js-$ to build-js-fr, for example.
     const replaceTokens = (name) => name.replace(/\$/g, locale);
     const localeTaskName = replaceTokens(taskName);
-    const localeDependencies = dependencies.map(replaceTokens);
-    gulp.task(localeTaskName, gulp.series(
-        gulp.parallel(...localeDependencies),
-        (cb) => operation(cb, locale)
-    ));
+    if (dependencies.length) {
+      const localeDependencies = dependencies.map(replaceTokens);
+      gulp.task(localeTaskName, gulp.series(
+          gulp.parallel(...localeDependencies),
+          (cb) => operation(cb, locale)
+      ));
+    } else {
+      gulp.task(localeTaskName, (cb) => operation(cb, locale))
+    }
     return localeTaskName;
   });
 }
@@ -604,10 +647,15 @@ function registerTasks(cssOption, id, compilerOption) {
       gulp.parallel(`build-js${idStr}-${DEFAULT_LOCALE}`));
 
 
+
   // Builds the final JS file for all supported languages.
   gulp.task(`build-all-js${idStr}`, 
       gulp.parallel(...buildJsTasks));
 
+  gulp.task(`build-all-series-js${idStr}`, 
+      gulp.series(...buildJsTasks));
+
+ 
   // Builds the NPM module for the default language.
   gulp.task(`build-npm${idStr}`, 
       gulp.parallel(`build-npm${idStr}-${DEFAULT_LOCALE}`));
@@ -736,6 +784,16 @@ gulp.task('build-demo',
 gulp.task('build-demo-css', 
   gulp.parallel(
     'build-css', 'build-css-1', 'build-css-rtl', 'build-css-rtl-1'))
+
+gulp.task('build-all-series',
+  gulp.series(
+    'build-externs', 'build-ts', 
+    'build-all-series-js', 'build-all-series-js-1',
+    'build-npm', 'build-npm-1',
+    'build-esm', 'build-esm-1',
+    'build-css', 'build-css-rtl',
+    'build-css-1', 'build-css-rtl-1'));
+
 
 
 // vi: se ts=2 sw=2 et:
