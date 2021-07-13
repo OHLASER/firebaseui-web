@@ -114,6 +114,16 @@ const TYPES_FILE = './types/index.d.ts';
 const EXTERNS_FILES = './externs/*.js';
 
 
+function getSoyDirectory(id) {
+  let idStr = undefined
+  if (id == '') {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  return `soy${idStr}`
+}
+
 /**
  * get soy file compile opion
  */
@@ -129,7 +139,7 @@ function getSoyCompileOption(id) {
   const result = {
     name: 'soy_files',
     srcs: glob([
-      `soy${idStr}/*.soy`
+      `${getSoyDirectory(id)}/*.soy`
     ]),
     out: getSoyIntermidiateDirectory(id),
     options: {
@@ -329,15 +339,91 @@ function getEsmModuleWrapper(output, sourceMap) {
 function compile(srcs, out, args) {
   // Get the compiler arguments, using the defaults if not specified.
   const combinedArgs = Object.assign({}, COMPILER_DEFAULT_ARGS, args);
+  const fs = require('fs')
 
-  return gulp
-      .src(srcs)
+  let doCompile = false
+  if (fs.existsSync(out)) {
+    const outFd = fs.openSync(out)
+    const outStat = fs.fstatSync(outFd)
+    let havingNewFiles = false
+
+    const sourceFiles = glob(srcs)
+    for (let idx = 0; idx < sourceFiles.length; idx++) {
+      let elem = sourceFiles[idx]
+      const elemFd = fs.openSync(elem)
+      const elemStat = fs.fstatSync(elemFd) 
+      if (elemStat.isFile()) {
+        havingNewFiles = elemStat.mtimeMs - outStat.mtimeMs > 0
+      }
+      fs.closeSync(elemFd)
+      if (havingNewFiles) {
+        break
+      }
+    }
+    fs.closeSync(outFd) 
+    doCompile = havingNewFiles
+  } else {
+    doCompile = true
+  }
+
+  let result = undefined
+  if (doCompile) {
+    result = gulp.src(srcs)
       .pipe(closureCompiler({
         compilerPath: COMPILER_PATH,
         fileName: path.basename(out),
         compilerFlags: combinedArgs
       }))
       .pipe(gulp.dest(path.dirname(out)));
+  } else {
+    const EventEmitter = require('events')
+    result = new EventEmitter()
+    setTimeout(() => {
+      result.emit('end')
+    }) 
+  }
+  return result
+}
+
+
+function compileSoyFiles(cb, id) {
+
+  const compileOption = getSoyCompileOption(id)
+
+  const fs = require('fs')
+  let doCompile = false
+
+  for (let idx = 0; idx < compileOption.srcs.length; idx++) {
+    const source = compileOption.srcs[idx]
+    let srcPathInfo = path.parse(source)
+    let output = path.join(compileOption.out,
+      getSoyDirectory(id), `${srcPathInfo['name']}.soy.js`) 
+    if (fs.existsSync(output)) {
+      const srcFd = fs.openSync(source)
+      const srcStat = fs.fstatSync(srcFd) 
+      const outputFd = fs.openSync(output)
+      const outputStat = fs.fstatSync(outputFd) 
+      if (outputStat.isFile()) {
+        doCompile = srcStat.mtimeMs - outputStat.mtimeMs > 0
+      }
+      fs.closeSync(outputFd)
+      fs.closeSync(srcFd)
+    } else {
+      doCompile = true
+    }
+    if (doCompile) {
+      break
+    }
+  }
+
+  if (doCompile) {
+    closureBuilder.build(compileOption,
+      (erros, warnings, files, results) => {
+        cb() 
+      })
+  } else {
+    cb()
+  }
 }
 
 /**
@@ -598,13 +684,8 @@ function registerTasks(cssOption, id, compilerOption) {
   gulp.task(`build-css-rtl${idStr}`, (cb) => buildCss(cb, true, cssOption, id));
 
   // Compiles the Closure templates into JavaScript.
-  gulp.task(soyTaskStr, (cb) => {
-    closureBuilder.build(getSoyCompileOption(id),
-      (erros, warnings, files, results) => {
-        cb() 
-      });
+  gulp.task(soyTaskStr, cb => compileSoyFiles(cb, id))
 
-  });
 
   const uiDependencies = [soyTaskStr]
 
