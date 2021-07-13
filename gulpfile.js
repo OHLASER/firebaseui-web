@@ -642,10 +642,6 @@ function registerTasks(cssOption, id, compilerOption) {
         CJS_DEPS, id, compilerOption));
 
 
-  // Builds the final JS file for the default language.
-  gulp.task(`build-js${idStr}`,
-      gulp.parallel(`build-js${idStr}-${DEFAULT_LOCALE}`));
-
 
 
   // Builds the final JS file for all supported languages.
@@ -655,7 +651,26 @@ function registerTasks(cssOption, id, compilerOption) {
   gulp.task(`build-all-series-js${idStr}`, 
       gulp.series(...buildJsTasks));
 
- 
+
+  gulp.task(`build-all-npm-js${idStr}`,
+      gulp.parallel(buildNpmTasks))
+
+  gulp.task(`build-all-series-npm-js${idStr}`,
+      gulp.series(buildNpmTasks))
+
+
+  gulp.task(`build-all-esm-js${idStr}`,
+      gulp.parallel(buildEsmTasks))
+
+  gulp.task(`build-all-series-esm-js${idStr}`,
+      gulp.series(buildEsmTasks))
+
+
+
+  // Builds the final JS file for the default language.
+  gulp.task(`build-js${idStr}`,
+      gulp.parallel(`build-js${idStr}-${DEFAULT_LOCALE}`));
+
   // Builds the NPM module for the default language.
   gulp.task(`build-npm${idStr}`, 
       gulp.parallel(`build-npm${idStr}-${DEFAULT_LOCALE}`));
@@ -770,8 +785,10 @@ gulp.task('build-all',
       gulp.series(
         gulp.parallel('build-externs', 'build-ts'), 
         gulp.parallel('build-all-js', 'build-all-js-1'),
-        gulp.parallel('build-npm', 'build-npm-1'),
-        gulp.parallel('build-esm', 'build-esm-1')),
+        gulp.parallel('build-all-npm-js', 'build-all-npm-js-1'),
+        gulp.parallel('build-all-esm-js', 'build-all-esm-js-1'),
+        gulp.parallel('build-js', 'build-npm', 'build-esm'),
+        gulp.parallel('build-js-1', 'build-npm-1', 'build-esm-1')),
       'build-css', 'build-css-rtl', 'build-css-1', 'build-css-rtl-1'));
 
 gulp.task('build-demo', 
@@ -789,8 +806,10 @@ gulp.task('build-all-series',
   gulp.series(
     'build-externs', 'build-ts', 
     'build-all-series-js', 'build-all-series-js-1',
-    'build-npm', 'build-npm-1',
-    'build-esm', 'build-esm-1',
+    'build-all-series-npm-js', 'build-all-series-npm-js-1',
+    'build-all-series-esm-js', 'build-all-series-esm-js-1',
+    'build-js', 'build-npm', 'build-esm',
+    'build-js-1', 'build-npm-1', 'build-esm-1',
     'build-css', 'build-css-rtl',
     'build-css-1', 'build-css-rtl-1'));
 

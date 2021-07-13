@@ -1,24 +1,13 @@
 {
-  "name": "firebaseui",
-  "version": "4.8.0",
+  "name": "@oh-laser/firebaseui",
+  "version": "5.0.0",
   "description": "Javascript library for customizable UI on top of Firebase SDK",
-  "files": [
-    "dist/firebaseui.js",
-    "dist/firebaseui.css",
-    "dist/npm.js",
-    "dist/esm.js",
-    "dist/index.d.ts",
-    "dist/externs",
-    "LICENSE",
-    "README.md",
-    "package.json"
-  ],
   "main": "./dist/npm.js",
   "module": "./dist/esm.js",
   "types": "./dist/index.d.ts",
   "style": "dist/firebaseui.css",
   "scripts": {
-    "build": "gulp",
+    "build": "gulp build-all-series",
     "build-all": "gulp build-all",
     "build-soy": "gulp build-soy",
     "build-demo": "gulp build-demo",
@@ -31,13 +20,16 @@
     "prepublish": "npm run test && cp -r dist demo/public"
   },
   "test": "npm run test",
-  "author": "Google",
+  "author": {
+    "name": "Toshiyuki Ogawa",
+    "email": "ogawa@oh-laser.com"
+  },
+  "contributors": [
+     "Google"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/firebase/firebaseui-web.git"
-  },
-  "publishConfig": {
-    "registry": "https://wombat-dressing-room.appspot.com"
+    "url": "https://github.com/OHLASER/firebaseui-web.git"
   },
   "license": "Apache-2.0",
   "devDependencies": {
