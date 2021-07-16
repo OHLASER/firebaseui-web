@@ -274,7 +274,13 @@ input.firebaseui-input-invalid{
 
 .firebaseui-idp-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+
+  grid-template-columns: repeat(3, 1fr);
+
+  @include media-breakpoint-up(sm) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
   &:focus {
     outline: 0;
     .firebaseui-idp-button.active {
@@ -283,18 +289,34 @@ input.firebaseui-input-invalid{
   }
 
   .firebaseui-idp-button {
-    &:nth-child(4n),
+    &:nth-child(3n),
     &:last-child {
       border-right-width: $btn-border-width;
       border-top-right-radius: $btn-border-radius;
       border-bottom-right-radius: $btn-border-radius;
     }
-    &:nth-child(4n + 1) {
+    &:nth-child(3n + 1) {
       border-top-left-radius: $btn-border-radius;
       border-bottom-left-radius: $btn-border-radius;
     }
-    &:last-child:not(:nth-child(4n)) {
+    &:last-child:not(:nth-child(3n)) {
       margin-right: -$btn-border-width;
+    }
+ 
+    @include media-breakpoint-up(sm) {
+      &:nth-child(4n),
+      &:last-child {
+        border-right-width: $btn-border-width;
+        border-top-right-radius: $btn-border-radius;
+        border-bottom-right-radius: $btn-border-radius;
+      }
+      &:nth-child(4n + 1) {
+        border-top-left-radius: $btn-border-radius;
+        border-bottom-left-radius: $btn-border-radius;
+      }
+      &:last-child:not(:nth-child(4n)) {
+        margin-right: -$btn-border-width;
+      }
     }
     &:focus {
       outline: 0;
