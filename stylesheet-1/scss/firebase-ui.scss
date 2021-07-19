@@ -288,21 +288,23 @@ input.firebaseui-input-invalid{
     }
   }
 
+
   .firebaseui-idp-button {
-    &:nth-child(3n),
-    &:last-child {
-      border-right-width: $btn-border-width;
-      border-top-right-radius: $btn-border-radius;
-      border-bottom-right-radius: $btn-border-radius;
-    }
-    &:nth-child(3n + 1) {
-      border-top-left-radius: $btn-border-radius;
-      border-bottom-left-radius: $btn-border-radius;
-    }
-    &:last-child:not(:nth-child(3n)) {
-      margin-right: -$btn-border-width;
-    }
- 
+    @include media-breakpoint-down(sm) {
+      &:nth-child(3n),
+      &:last-child {
+        border-right-width: $btn-border-width;
+        border-top-right-radius: $btn-border-radius;
+        border-bottom-right-radius: $btn-border-radius;
+      }
+      &:nth-child(3n + 1) {
+        border-top-left-radius: $btn-border-radius;
+        border-bottom-left-radius: $btn-border-radius;
+      }
+      &:last-child:not(:nth-child(3n)) {
+        margin-right: -$btn-border-width;
+      }
+    } 
     @include media-breakpoint-up(sm) {
       &:nth-child(4n),
       &:last-child {
