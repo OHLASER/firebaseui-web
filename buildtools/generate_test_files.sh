@@ -30,7 +30,7 @@ cp -r ./out/soy/* ./generated
 npm run build clean
 
 echo "Generating dependency file..."
-node $(npm bin)/closure-make-deps \
+$(npm bin)/closure-make-deps \
     --closure-path="node_modules/google-closure-library/closure/goog" \
     --file="node_modules/google-closure-library/closure/goog/deps.js" \
     --root="soy" \
