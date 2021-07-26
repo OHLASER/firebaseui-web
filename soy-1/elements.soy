@@ -24,7 +24,8 @@
   {@param? email: string} /** The email address to prefill. */
   {@param? disabled: bool} /** Whether the email input is disabled or not. */
   {@param? changeEmail: bool} /** Whether to use change email label. */
-  <div class="firebaseui-textfield mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+  <div class="firebaseui-textfield mdl-textfield mdl-js-textfield{sp}
+    mdl-textfield--floating-label firebaseui-email-container">
     <label class="mdl-textfield__label firebaseui-label" for="ui-sign-in-email-input">
       {if $changeEmail}
         {msg desc="Label of a change email address input field."}Enter new email address{/msg}
@@ -41,8 +42,8 @@
         value="{$email ?: ''}"
         {if $disabled}disabled{/if}>
   </div>
-  <div class="firebaseui-error-wrapper">
-    <p class="firebaseui-error firebaseui-text-input-error firebaseui-hidden{sp}
+  <div class="firebaseui-error-wrapper firebaseui-hidden email">
+    <p class="firebaseui-error firebaseui-text-input-error{sp}
               firebaseui-id-email-error"></p>
   </div>
 {/template}
@@ -75,8 +76,8 @@
           value="{$nationalNumber ?: ''}">
     </div>
   </div>
-  <div class="firebaseui-error-wrapper">
-    <p class="firebaseui-error firebaseui-text-input-error firebaseui-hidden{sp}
+  <div class="firebaseui-error-wrapper phone firebaseui-hidden">
+    <p class="firebaseui-error firebaseui-text-input-error{sp}
               firebaseui-phone-number-error firebaseui-id-phone-number-error"></p>
   </div>
 {/template}
@@ -97,8 +98,8 @@
         id="ui-sign-in-phone-confirmation-code-input"
         class="mdl-textfield__input firebaseui-input firebaseui-id-phone-confirmation-code">
   </div>
-  <div class="firebaseui-error-wrapper">
-    <p class="firebaseui-error firebaseui-text-input-error firebaseui-hidden{sp}
+  <div class="firebaseui-error-wrapper confirm-code firebaseui-hidden">
+    <p class="firebaseui-error firebaseui-text-input-error{sp}
               firebaseui-id-phone-confirmation-code-error"></p>
   </div>
 {/template}
@@ -272,7 +273,8 @@
  */
 {template .name}
   {@param? name: string} /** The display name to prefill. */
-  <div class="firebaseui-textfield mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+  <div class="firebaseui-textfield mdl-textfield mdl-js-textfield{sp}
+    mdl-textfield--floating-label firebaseui-name-container">
     <label class="mdl-textfield__label firebaseui-label" for="ui-sign-in-name-input">
       {msg desc="Label of a field for setting the user's name."}First &amp; last name{/msg}
     </label>
@@ -284,8 +286,8 @@
         class="mdl-textfield__input firebaseui-input firebaseui-id-name"
         value="{$name ?: ''}">
   </div>
-  <div class="firebaseui-error-wrapper">
-    <p class="firebaseui-error firebaseui-text-input-error firebaseui-hidden{sp}
+  <div class="firebaseui-error-wrapper firebaseui-hidden name">
+    <p class="firebaseui-error firebaseui-text-input-error{sp}
               firebaseui-id-name-error"></p>
   </div>
 {/template}
@@ -306,18 +308,22 @@
           {msg desc="Label of a field for setting new password."}Choose password{/msg}
         {/if}
       </label>
-      <input
-          type="password"
-          name="newPassword"
-          id="ui-sign-in-new-password-input"
-          autocomplete="new-password"
-          class="mdl-textfield__input firebaseui-input firebaseui-id-new-password">
+      <div class="input-group">
+        <input
+            type="password"
+            name="newPassword"
+            id="ui-sign-in-new-password-input"
+            autocomplete="new-password"
+            class="mdl-textfield__input firebaseui-input {sp}
+              firebaseui-id-new-password form-control">
+        <a href="javascript:void(0)"
+          class="btn firebaseui-id-password-toggle{sp}
+           firebaseui-input-toggle-on firebaseui-input-toggle-blur"></a>
+      </div>
     </div>
-    <a href="javascript:void(0)" class="firebaseui-input-floating-button{sp}
-        firebaseui-id-password-toggle firebaseui-input-toggle-on firebaseui-input-toggle-blur">
-    </a>
-    <div class="firebaseui-error-wrapper">
-      <p class="firebaseui-error firebaseui-text-input-error firebaseui-hidden{sp}
+
+    <div class="firebaseui-error-wrapper firebaseui-hidden new-password">
+      <p class="firebaseui-error firebaseui-text-input-error{sp}
           firebaseui-id-new-password-error">
       </p>
     </div>
@@ -330,7 +336,8 @@
  */
 {template .password}
   {@param? current: bool} /** Whether to show "Current password" or "Password" label. */
-  <div class="firebaseui-textfield mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+  <div class="firebaseui-textfield mdl-textfield mdl-js-textfield{sp}
+    mdl-textfield--floating-label firebaseui-password-component">
     <label class="mdl-textfield__label firebaseui-label" for="ui-sign-in-password-input">
       {if $current}
         {msg desc="Label of a password field."}Current password{/msg}
@@ -338,15 +345,21 @@
         {msg desc="Label of a password field."}Password{/msg}
       {/if}
     </label>
-    <input
+    <div class="input-group">
+      <input
         type="password"
         name="password"
         id="ui-sign-in-password-input"
         autocomplete="current-password"
-        class="mdl-textfield__input firebaseui-input firebaseui-id-password">
+        class="mdl-textfield__input firebaseui-input firebaseui-id-password{sp}
+          form-control">
+      <a href="javascript:void(0)"
+        class="btn firebaseui-id-password-toggle{sp}
+         firebaseui-input-toggle-on firebaseui-input-toggle-blur"></a>
+    </div>
   </div>
-  <div class="firebaseui-error-wrapper">
-    <p class="firebaseui-error firebaseui-text-input-error firebaseui-hidden{sp}
+  <div class="firebaseui-error-wrapper firebaseui-hidden password">
+    <p class="firebaseui-error firebaseui-text-input-error{sp}
               firebaseui-id-password-error">
     </p>
   </div>
@@ -357,7 +370,8 @@
  * Renders the password recovery button.
  */
 {template .passwordRecoveryButton}
-  <a class="firebaseui-link firebaseui-id-secondary-link" href="javascript:void(0)">
+  <a class="firebaseui-link firebaseui-forgot-password"
+    href="javascript:void(0)">
     {msg desc="Label of the password recovery link"}Trouble signing in?{/msg}
   </a>
 {/template}

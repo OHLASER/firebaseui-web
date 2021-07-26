@@ -25,6 +25,7 @@ goog.require('firebaseui.auth.ui.element.form');
 goog.require('firebaseui.auth.ui.element.name');
 goog.require('firebaseui.auth.ui.element.newPassword');
 goog.require('firebaseui.auth.ui.page.Base');
+goog.require('firebaseui.auth.ui.adopter.TooltipMgr')
 goog.requireType('goog.dom.DomHelper');
 
 
@@ -68,22 +69,61 @@ firebaseui.auth.ui.page.PasswordSignUp =
     this.onSubmitClick_ = onSubmitClick;
     this.onCancelClick_ = opt_onCancelClick;
     this.requireDisplayName_ = requireDisplayName;
+
+
+    this.emailErrorPopper_ = null
+    this.nameErrorPopper_ = null
+    this.passwordErrorPopper_ = null
   }
 
   /** @override */
   enterDocument() {
-    this.initEmailElement();
+    this.initEmailElement(this.onSubmitClick_);
     if (this.requireDisplayName_) {
-      this.initNameElement();
+      this.initNameElement(this.onSubmitClick_);
     }
-    this.initNewPasswordElement();
+    this.initNewPasswordElement(this.onSubmitClick_);
     this.initFormElement(this.onSubmitClick_, this.onCancelClick_);
+
+    const emailErrContainer = this.getEmailErrorContainerElement()
+    const nameErrContainer = this.getNameErrorContainerElement()
+    const passwordErrContainer = this.getNewPasswordErrorContainerElement()
+
+
+    const TooltipMgr = goog.module.get(
+      'firebaseui.auth.ui.adopter.TooltipMgr')
+  
+    if (emailErrContainer) {
+      this.emailErrorPopper_ = TooltipMgr.createPopper(
+        this.getEmailElement(), emailErrContainer)   
+    }
+    if (nameErrContainer) {
+      this.nameErrorPopper_ = TooltipMgr.createPopper(
+        this.getNameElement(), nameErrContainer)
+    }
+    if (passwordErrContainer) {
+      this.passwordErrorPopper_ = TooltipMgr.createPopper(
+        this.getNewPasswordElement(), passwordErrContainer)
+    }
     this.setupFocus_();
     super.enterDocument();
   }
 
   /** @override */
   disposeInternal() {
+    if (this.emailErrorPopper_) {
+      this.emailErrorPopper_.destroy()
+    }
+    if (this.nameErrorPopper_) {
+      this.nameErrorPopper_.destroy()
+    }
+    if (this.passwordErrorPopper_) {
+      this.passwordErrorPopper_.destroy()
+    }
+    this.emailErrorPopper_ = null
+    this.nameErrorPopper_ = null
+    this.passwordErrorPopper_ = null
+  
     this.onSubmitClick_ = null;
     this.onCancelClick_ = null;
     super.disposeInternal();
@@ -122,6 +162,68 @@ firebaseui.auth.ui.page.PasswordSignUp =
       this.getNewPasswordElement().focus();
     }
   }
+  /**
+   * validate and show error message
+   */
+  validateEmail(errorComponent, error, errorContainerElement) {
+    const result =firebaseui.auth.ui.element.email.validate(
+      errorComponent, error, errorContainerElement) 
+    if (!result) {
+      this.prepareVisibleEmailError()
+    }
+    return result
+  }
+  /**
+   * validate password or show error message
+   */
+  validatePassword(errorComponent, error, errorContainerElement) {
+    const result = firebaseui.auth.ui.element.password.validate(
+      errorComponent, error, errorContainerElement) 
+    if (!result) {
+      this.prepareVisiblePasswordError()
+    }
+    return result
+  }
+
+  /**
+   * validate name or show error message
+   */
+  validateName(errorComponent, error, errorContainerElement) {
+    const result = firebaseui.auth.ui.element.name.validate(
+      errorComponent, error, errorContainerElement) 
+    if (!result) {
+      this.prepareVisibleNameError()
+    }
+    return result
+  }
+
+  /**
+   * prepare visible email error
+   */
+  prepareVisibleEmailError() {
+      if (this.emailErrorPopper_) {
+      this.emailErrorPopper_.update()
+    }
+  }
+
+  
+  /**
+   * prepare visible name error
+   */
+  prepareVisibleNameError() {
+    if (this.nameErrorPopper_) {
+      this.nameErrorPopper_.update()
+    }
+  }
+
+  /**
+   * prepare visible password error
+   */
+  prepareVisiblePasswordError() {
+    if (this.passwordErrorPopper_) {
+      this.passwordErrorPopper_.update()
+    }
+  }
 };
 
 
@@ -134,6 +236,8 @@ goog.mixin(
           firebaseui.auth.ui.element.email.getEmailElement,
       getEmailErrorElement:
           firebaseui.auth.ui.element.email.getEmailErrorElement,
+      getEmailErrorContainerElement:
+          firebaseui.auth.ui.element.email.getEmailErrorContainerElement,
       initEmailElement:
           firebaseui.auth.ui.element.email.initEmailElement,
       getEmail:
@@ -146,6 +250,8 @@ goog.mixin(
           firebaseui.auth.ui.element.name.getNameElement,
       getNameErrorElement:
           firebaseui.auth.ui.element.name.getNameErrorElement,
+      getNameErrorContainerElement:
+        firebaseui.auth.ui.element.name.getNameErrorContainerElement,
       initNameElement:
           firebaseui.auth.ui.element.name.initNameElement,
       checkAndGetName:
@@ -156,6 +262,8 @@ goog.mixin(
           firebaseui.auth.ui.element.newPassword.getNewPasswordElement,
       getNewPasswordErrorElement:
           firebaseui.auth.ui.element.newPassword.getNewPasswordErrorElement,
+      getNewPasswordErrorContainerElement:
+        firebaseui.auth.ui.element.newPassword.getNewPasswordErrorContainerElement,
       getPasswordToggleElement:
           firebaseui.auth.ui.element.newPassword.getPasswordToggleElement,
       initNewPasswordElement:

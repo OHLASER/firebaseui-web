@@ -813,7 +813,7 @@ firebaseui.auth.widget.handler.common.handleGoogleYoloCredential =
  * @package
  */
 firebaseui.auth.widget.handler.common.verifyPassword =
-    function(app, component) {
+    function(app, component, showInvalidEmail, showInvalidPassword) {
   // Check fields are valid.
   var email = component.checkAndGetEmail();
   var password = component.checkAndGetPassword();
@@ -830,18 +830,22 @@ firebaseui.auth.widget.handler.common.verifyPassword =
   // This credential will never be passed to developer or stored internally.
   var emailPassCred =
       firebase.auth.EmailAuthProvider.credential(email, password);
-
-  var showInvalidEmail = function(error) {
-    firebaseui.auth.ui.element.setValid(component.getEmailElement(), false);
-    firebaseui.auth.ui.element.show(component.getEmailErrorElement(),
+  if (typeof showInvalidEmail !== 'function') {
+    showInvalidEmail = function(error) {
+      firebaseui.auth.ui.element.setValid(component.getEmailElement(), false);
+      firebaseui.auth.ui.element.show(component.getEmailErrorElement(),
         firebaseui.auth.widget.handler.common.getErrorMessage(error));
-  };
-
-  var showInvalidPassword = function(error) {
-    firebaseui.auth.ui.element.setValid(component.getPasswordElement(), false);
-    firebaseui.auth.ui.element.show(component.getPasswordErrorElement(),
-        firebaseui.auth.widget.handler.common.getErrorMessage(error));
-  };
+    };
+  }
+  if (typeof showInvalidPassword !== 'function') {
+    showInvalidPassword = function(error) {
+      firebaseui.auth.ui.element.setValid(
+        component.getPasswordElement(), false);
+      firebaseui.auth.ui.element.show(
+        component.getPasswordErrorElement(),
+          firebaseui.auth.widget.handler.common.getErrorMessage(error));
+    };
+  }
 
   var showInfoBarWithError = function(error) {
     component.showInfoBar(

@@ -124,7 +124,7 @@ $oh-laser-primary-color: map-get($oh-laser-colors, 2);
 }
 
 .firebaseui-error {
-  color: #dd2c00;
+  color: map-get($oh-laser-colors, 3);
   direction: ltr;
   font-size: 12px;
   line-height: 16px;
@@ -134,12 +134,14 @@ $oh-laser-primary-color: map-get($oh-laser-colors, 2);
 
 .firebaseui-text-input-error {
   /* Set a negative margin, as MDL text inputs have a large bottom margin. */
-  margin: -16px 0 16px;
 }
 
 
 .firebaseui-error-wrapper {
-  min-height: 16px;
+  &.firebaseui-hidden {
+    display: initial;
+    visibility: hidden;
+  }
 }
 
 
@@ -159,27 +161,163 @@ $oh-laser-primary-color: map-get($oh-laser-colors, 2);
 }
 
 .firebaseui-label {
-  color: rgba(0, 0, 0, 0.54);
-  direction: ltr;
-  font-size: 16px;
-  text-align: left;
+  margin-bottom: $form-label-margin-bottom;
+  @include font-size($form-label-font-size);
+  font-style: $form-label-font-style;
+  font-weight: $form-label-font-weight;
+  color: $form-label-color;
 }
 
 /* Override MDL floating text field label color. */
 .mdl-textfield--floating-label.is-focused .mdl-textfield__label,
 .mdl-textfield--floating-label.is-dirty .mdl-textfield__label {
-  color: #757575;
 }
+
+
 
 .firebaseui-input,
 .firebaseui-input-invalid {
-  border-radius: 0; /** iOS puts rounded corners on text inputs. */
-  color: rgba(0, 0, 0, 0.87);
-  direction: ltr;
-  font-size: 16px;
+  display: block;
   width: 100%;
+  padding: $input-padding-y $input-padding-x;
+  font-family: $input-font-family;
+  @include font-size($input-font-size);
+  font-weight: $input-font-weight;
+  line-height: $input-line-height;
+  color: $input-color;
+  background-color: $input-bg;
+  background-clip: padding-box;
+  border: $input-border-width solid $input-border-color;
+  appearance: none; // Fix appearance for date inputs in Safari
+
+  // Note: This has no effect on <select>s in some browsers, due to the limited stylability of `<select>`s in CSS.
+  @include border-radius($input-border-radius, 0);
+
+  @include box-shadow($input-box-shadow);
+  @include transition($input-transition);
+
+  &[type="file"] {
+    overflow: hidden; // prevent pseudo element button overlap
+
+    &:not(:disabled):not([readonly]) {
+      cursor: pointer;
+    }
+  }
+
+  // Customize the `:focus` state to imitate native WebKit styles.
+  &:focus {
+    color: $input-focus-color;
+    background-color: $input-focus-bg;
+    border-color: $input-focus-border-color;
+    outline: 0;
+    @if $enable-shadows {
+      @include box-shadow($input-box-shadow, $input-focus-box-shadow);
+    } @else {
+      // Avoid using mixin so we can pass custom focus shadow properly
+      box-shadow: $input-focus-box-shadow;
+    }
+  }
+
+  // Add some height to date inputs on iOS
+  // https://github.com/twbs/bootstrap/issues/23307
+  // TODO: we can remove this workaround once https://bugs.webkit.org/show_bug.cgi?id=198959 is resolved
+  &::-webkit-date-and-time-value {
+    // Multiply line-height by 1em if it has no unit
+    height: if(unit($input-line-height) == "", $input-line-height * 1em, $input-line-height);
+  }
+
+  // Placeholder
+  &::placeholder {
+    color: $input-placeholder-color;
+    // Override Firefox's unusual default opacity; see https://github.com/twbs/bootstrap/pull/11526.
+    opacity: 1;
+  }
+
+  // Disabled and read-only inputs
+  //
+  // HTML5 says that controls under a fieldset > legend:first-child won't be
+  // disabled if the fieldset is disabled. Due to implementation difficulty, we
+  // don't honor that edge case; we style them as disabled anyway.
+  &:disabled,
+  &[readonly] {
+    background-color: $input-disabled-bg;
+    border-color: $input-disabled-border-color;
+    // iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655.
+    opacity: 1;
+  }
+
+  // File input buttons theming
+  &::file-selector-button {
+    padding: $input-padding-y $input-padding-x;
+    margin: (-$input-padding-y) (-$input-padding-x);
+    margin-inline-end: $input-padding-x;
+    color: $form-file-button-color;
+    @include gradient-bg($form-file-button-bg);
+    pointer-events: none;
+    border-color: inherit;
+    border-style: solid;
+    border-width: 0;
+    border-inline-end-width: $input-border-width;
+    border-radius: 0; // stylelint-disable-line property-disallowed-list
+    @include transition($btn-transition);
+  }
+
+  &:hover:not(:disabled):not([readonly])::file-selector-button {
+    background-color: $form-file-button-hover-bg;
+  }
+
+  &::-webkit-file-upload-button {
+    padding: $input-padding-y $input-padding-x;
+    margin: (-$input-padding-y) (-$input-padding-x);
+    margin-inline-end: $input-padding-x;
+    color: $form-file-button-color;
+    @include gradient-bg($form-file-button-bg);
+    pointer-events: none;
+    border-color: inherit;
+    border-style: solid;
+    border-width: 0;
+    border-inline-end-width: $input-border-width;
+    border-radius: 0; // stylelint-disable-line property-disallowed-list
+    @include transition($btn-transition);
+  }
+
+  &:hover:not(:disabled):not([readonly])::-webkit-file-upload-button {
+    background-color: $form-file-button-hover-bg;
+  }
+  
 }
 
+
+.firebaseui-id-password-toggle {
+  @include button-outline-variant(map-get($oh-laser-colors, 2));
+  width: 3em;
+  &::before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+
+  } 
+  &.firebaseui-input-toggle-on::before {
+    content: "\f06e";
+  }
+  &.firebaseui-input-toggle-off::before {
+    content: "\f070";
+  }
+}
+
+.firebaseui-email-container,
+.firebaseui-name-container,
+.firebaseui-new-password-component,
+.firebaseui-password-component
+ {
+  margin-bottom: $spacer;
+}
+
+
+
+input.firebaseui-id-new-password {
+  --focus-when-toggle-password-visible: false;
+}
+  
 input.firebaseui-input,
 input.firebaseui-input-invalid{
   direction: ltr;
@@ -187,7 +325,6 @@ input.firebaseui-input-invalid{
 }
 
 .firebaseui-input-invalid {
-  border-color: #dd2c00;
 }
 
 .firebaseui-textfield {
@@ -196,7 +333,6 @@ input.firebaseui-input-invalid{
 
 /* Override MDL's error handling with our own.  */
 .firebaseui-textfield.mdl-textfield .firebaseui-input {
-  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .firebaseui-textfield.mdl-textfield .firebaseui-label::after {
@@ -216,6 +352,37 @@ input.firebaseui-input-invalid{
   height: 36px;
   margin-left: 8px;
   min-width: 88px;
+}
+
+.firebaseui-form-actions {
+  button {
+
+    border-radius: $btn-border-radius;
+    &:focus {
+      outline: 0;
+    }
+    font-family: $btn-font-family;
+    font-weight: $btn-font-weight;
+    line-height: $btn-line-height;
+    color: $body-color;
+    background-color: transparent;
+    white-space: $btn-white-space;
+    vertical-align: middle;
+    cursor: if($enable-button-pointers, pointer, null);
+    user-select: none;
+    border-width: $btn-border-width 0 $btn-border-width $btn-border-width;
+    border-style: solid; 
+ 
+    @include button-outline-variant(map-get($oh-laser-colors, 4));
+    border-right-width: $btn-border-width;
+
+    &:disabled,
+    &.disabled {
+      pointer-events: none;
+      opacity: $btn-disabled-opacity;
+      @include box-shadow(none);
+    }
+  }
 }
 
 .firebaseui-link {
@@ -711,14 +878,6 @@ div.firebaseui-idp-button {
   width: 24px;
 }
 
-.firebaseui-input-toggle-on {
-  background-image: url("https://www.gstatic.com/images/icons/material/system/1x/visibility_black_24dp.png");
-}
-
-.firebaseui-input-toggle-off {
-  background-image: url("https://www.gstatic.com/images/icons/material/system/1x/visibility_off_black_24dp.png");
-}
-
 .firebaseui-input-toggle-focus {
   opacity: 0.87;
 }
@@ -791,13 +950,7 @@ div.firebaseui-idp-button {
   }
 }
 
-/*
- * Bootstrap applies styles to all <label> elements, so override those styles.
- */
-.mdl-textfield__label {
-  font-weight: normal;
-  margin-bottom: 0;
-}
+
 
 .firebaseui-id-page-blank {
   background: inherit;

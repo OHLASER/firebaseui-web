@@ -1,6 +1,6 @@
 {
   "name": "@oh-laser/firebaseui",
-  "version": "5.0.3",
+  "version": "5.0.4",
   "description": "Javascript library for customizable UI on top of Firebase SDK",
   "main": "./dist/npm.js",
   "module": "./dist/esm.js",

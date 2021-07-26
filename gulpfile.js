@@ -95,11 +95,14 @@ const DEST_DIR = 'dist';
 const DEFAULT_LOCALE = 'en';
 
 // The list of all locales that are supported.
-const ALL_LOCALES = ['ar-XB', 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'en',
+const ALL_LOCALES = [
+    'en',
+    'ar-XB'/*, 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el',
     'en-GB', 'en-XA', 'es-419', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hr', 'hu',
     'id', 'it', 'iw', 'ja', 'ko', 'lt', 'lv', 'nl', 'no', 'pl', 'pt-PT',
     'pt-BR', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'vi',
-    'zh-CN', 'zh-TW'];
+    'zh-CN', 'zh-TW'*/];
+
 
 // Default arguments to pass into Closure Compiler.
 const COMPILER_DEFAULT_ARGS = {
@@ -224,7 +227,6 @@ function createSourceMapGenerator(
       const outputLoc = wrapper.indexOf('%output%')
       if (outputLoc > 0 && sourceMap) {
 
-
         const data = fse.readFileSync(sourceMap)
         if (data) {
           const version = 3
@@ -336,7 +338,7 @@ function getEsmModuleWrapper(output, sourceMap) {
  * @param {!Object} args Additional arguments to Closure compiler.
  * @return {*} A stream that finishes when compliation finishes.
  */
-function compile(srcs, out, args) {
+function compile(srcs, out, sourceMapName, args) {
   // Get the compiler arguments, using the defaults if not specified.
   const combinedArgs = Object.assign({}, COMPILER_DEFAULT_ARGS, args);
   const fs = require('fs')
@@ -368,6 +370,10 @@ function compile(srcs, out, args) {
 
   let result = undefined
   if (doCompile) {
+    console.log(sourceMapName)
+    if (fs.existsSync(sourceMapName)) {
+      fs.unlinkSync(sourceMapName)
+    }
     result = gulp.src(srcs)
       .pipe(closureCompiler({
         compilerPath: COMPILER_PATH,
@@ -598,9 +604,8 @@ function concatWithDeps(cb, locale, outBaseName,
     if (compilerOption) {
       Object.assign(flags, compilerOption)
     }
-
      
-    const st = compile(srcs, outputPath, flags)
+    const st = compile(srcs, outputPath, sourceMapName, flags)
     const srcMapEmitter = wrapperSetting.sourceMap(st) 
     promises.push(new Promise((resolve, reject) => {
       srcMapEmitter.once('end', () => {

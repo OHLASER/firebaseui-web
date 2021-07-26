@@ -166,7 +166,12 @@ firebaseui.auth.widget.handler.onSignUpSubmit_ = function(app, component) {
                 false);
             firebaseui.auth.ui.element.show(
                 component.getNewPasswordErrorElement(),
-                errorMessage);
+                errorMessage,
+                component.getNewPasswordErrorContainerElement());
+
+            if (typeof component.prepareVisiblePasswordError === 'function') {
+               component.prepareVisiblePasswordError()
+            }
             break;
           default:
             firebaseui.auth.log.error(
