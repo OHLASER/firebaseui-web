@@ -46,6 +46,8 @@ element.newPassword.getPasswordToggleElement = function() {
 };
 
 
+
+
 /** @private {string} The CSS class for the "visiblility on" eye icon. */
 var CLASS_TOGGLE_ON_ = 'firebaseui-input-toggle-on';
 
@@ -87,17 +89,50 @@ element.newPassword.togglePasswordVisible = function() {
     goog.dom.classlist.add(toggleElement, CLASS_TOGGLE_ON_);
     goog.dom.classlist.remove(toggleElement, CLASS_TOGGLE_OFF_);
   }
-  newPasswordElement.focus();
+  if (element.newPassword.isFocusTogglePassword.call(this)) {
+    newPasswordElement.focus();
+  }
 };
 
 
 /**
- * @return {Element} The error panel.
+ * @return {Element} The error message.
  * @this {goog.ui.Component}
  */
 element.newPassword.getNewPasswordErrorElement = function() {
   return this.getElementByClass('firebaseui-id-new-password-error');
 };
+
+/**
+ * @return {Element} The error message container.
+ * @this {goog.ui.Component}
+ */
+element.newPassword.getNewPasswordErrorContainerElement = function() {
+  return this.getElement().querySelector(
+    '.firebaseui-error-wrapper.new-password');
+};
+
+
+/**
+ * @return {Boolean} true if you need to focus password input when toggle 
+ * password visiblility.
+ */
+element.newPassword.isFocusTogglePassword = function() {
+
+  const elem =this.getNewPasswordElement()
+
+  const style = window.getComputedStyle(elem)
+
+  const visibleStr = style.getPropertyValue(
+    '--focus-when-toggle-password-visible')
+
+  let result = true 
+  if (visibleStr) {
+    result = visibleStr.trim() == 'true'
+  }
+  return result
+}
+
 
 
 /**
@@ -107,16 +142,18 @@ element.newPassword.getNewPasswordErrorElement = function() {
  * @return {boolean} True if fields are valid.
  * @private
  */
-element.newPassword.validate_ = function(newPasswordElement, errorElement) {
+element.newPassword.validate = function(
+  newPasswordElement, errorElement, errorContainerElement) {
   var password = element.getInputValue(newPasswordElement) || '';
   if (!password) {
     element.setValid(newPasswordElement, false);
     element.show(errorElement,
-        firebaseui.auth.soy2.strings.errorMissingPassword().toString());
+      firebaseui.auth.soy2.strings.errorMissingPassword().toString(),
+      errorContainerElement);
     return false;
   } else {
     element.setValid(newPasswordElement, true);
-    element.hide(errorElement);
+    element.hide(errorElement, errorContainerElement);
     return true;
   }
 };
@@ -126,21 +163,27 @@ element.newPassword.validate_ = function(newPasswordElement, errorElement) {
  * Initializes the new password element.
  * @this {goog.ui.Component}
  */
-element.newPassword.initNewPasswordElement = function() {
+element.newPassword.initNewPasswordElement = function(opt_onEnter) {
   this.isPasswordVisible_ = false;
 
   var newPasswordElement = element.newPassword.getNewPasswordElement.call(this);
   newPasswordElement['type'] = 'password';
 
   var errorElement = element.newPassword.getNewPasswordErrorElement.call(this);
-
+  const errorContainerElement =
+    element.newPassword.getNewPasswordErrorContainerElement.call(this)
   element.listenForInputEvent(this, newPasswordElement, function(e) {
     // Clear but not show error on-the-fly.
-    if (element.isShown(errorElement)) {
-      element.setValid(newPasswordElement, true);
-      element.hide(errorElement);
+    if (element.isShown(errorElement, errorContainerElement)) {
+      element.setValid(newPasswordElement, true, errorContainerElement);
+      element.hide(errorElement, errorContainerElement);
     }
   });
+  if (opt_onEnter) {
+    element.listenForEnterEvent(this, newPasswordElement, function(e) {
+      opt_onEnter()
+    })
+  }
 
   var toggleElement = element.newPassword.getPasswordToggleElement.call(this);
   goog.dom.classlist.add(toggleElement, CLASS_TOGGLE_ON_);
@@ -170,9 +213,22 @@ element.newPassword.initNewPasswordElement = function() {
 element.newPassword.checkAndGetNewPassword = function() {
   var newPasswordElement = element.newPassword.getNewPasswordElement.call(this);
   var errorElement = element.newPassword.getNewPasswordErrorElement.call(this);
-  if (element.newPassword.validate_(newPasswordElement, errorElement)) {
+  const errorContainerElement =
+    element.newPassword.getNewPasswordErrorContainerElement.call(this)
+
+  let valid = undefined
+  if (typeof this.validatePassword  === 'function') {
+    valid = this.validatePassword(
+      newPasswordElement, errorElement, errorContainerElement) 
+  } else {
+    valid = element.newPassword.validate(
+      newPasswordElement, errorElement, errorContainerElement)
+  }
+
+  if (valid) {
     return element.getInputValue(newPasswordElement);
   }
   return null;
 };
 }); // goog.scope
+// vi: se ts=2 sw=2 et:

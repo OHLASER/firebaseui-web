@@ -63,6 +63,7 @@ class ProviderSignIn extends Base {
     this.radioButtons_ = new RadioButtons()
     this.onIdpClick_ = onIdpClick;
     this.activeChanged_ = null
+    this.signInButtonHdlr_ = null
   }
 
   /** @override */
@@ -73,6 +74,11 @@ class ProviderSignIn extends Base {
     this.activeChanged_ = (event) => { 
       self.onActiveRadioChanged(event)
     }
+
+
+    this.singInButtonHdlr_ = (event) => {
+      self.onSignIn(event)
+    }
     this.tooltipMgr_.bind(
       this, this.templateData_.providerConfigs, this.injectedData_)
     super.enterDocument();
@@ -80,16 +86,38 @@ class ProviderSignIn extends Base {
       '.firebaseui-idp-container',
       '.firebaseui-idp-container .firebaseui-idp-radio')
     this.radioButtons_.addEventListener('active', this.activeChanged_)
+
+   
+    const signInButton = this.signInButton  
+    if (signInButton) {
+      signInButton.addEventListener(
+        'click',
+        this.singInButtonHdlr_)
+      signInButton.addEventListener(
+        'keydown',
+        this.singInButtonHdlr_)
+    }
+    this.syncSignInButtonWithRadioStatus()
   }
 
   /** @override */
   disposeInternal() {
 
+    const signInButton = this.signInButton  
+    if (signInButton) {
+      signInButton.removeEventListener(
+        'click',
+        this.singInButtonHdlr_)
+      signInButton.removeEventListener(
+        'keydown',
+        this.singInButtonHdlr_)
+    }
     this.radioButtons_.removeEventListener('active', this.activeChanged_)
     this.radioButtons_.unbind()
     this.tooltipMgr_.unbind(this)
     this.onIdpClick_ = null;
     this.activeChanged_ = null
+    this.singInButtonHdlr_ = null
     super.disposeInternal();
   }
 
@@ -99,10 +127,50 @@ class ProviderSignIn extends Base {
    */
   onActiveRadioChanged(event) {
     if ('active' == event.type) {
-      const signInButton = this.signInButton
-      if (signInButton) {
-        signInButton.disabled = newElement ? false : true
-      } 
+      this.syncSignInButtonWithRadioStatus()
+    }
+  }
+
+  /**
+   * synchronize button status with radio selection status
+   */
+  syncSignInButtonWithRadioStatus() {
+    const signInButton = this.signInButton
+    if (signInButton) {
+      const radioButtons = this.radioButtons_
+      const activeButton = radioButtons.activeButton
+      signInButton.disabled = activeButton ? false : true
+    } 
+  }
+
+
+  /**
+   * handle event to sign in
+   */
+  onSignIn(event) {
+    let doSignIn = false
+    if (event.type == 'keydown') {
+      doSignIn = event.code == 'Enter'
+    } else {
+      doSignIn = event.type == 'click'
+    }
+    if (doSignIn) {
+      event.preventDefault()
+      this.signIn()
+    }
+  }
+
+  /**
+   * start sign in
+   */
+  signIn() {
+    const radioButtons = this.radioButtons_
+    const activeButton = radioButtons.activeButton
+    if (activeButton) {
+      const providerId = activeButton.dataset.providerId
+      if (providerId) {
+        this.onIdpClick_(providerId)
+      }
     }
   }
 }

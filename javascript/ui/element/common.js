@@ -164,22 +164,30 @@ firebaseui.auth.ui.element.getInputValue = function(e) {
 /**
  * Hides the element.
  * @param {Element} e The element to hide.
+ * @param {Element} ec The element to hide
  */
-firebaseui.auth.ui.element.hide = function(e) {
-  goog.dom.classlist.add(e, 'firebaseui-hidden');
+firebaseui.auth.ui.element.hide = function(e, ec) {
+  if (!ec) {
+    ec = e
+  }
+  goog.dom.classlist.add(ec, 'firebaseui-hidden');
 };
 
 
 /**
  * Shows the element.
- * @param {Element} e The element to show.
+ * @param {Element} e The element to set text.
  * @param {string=} opt_text The text to show.
+ * @param {Element=}  ec the element to show
  */
-firebaseui.auth.ui.element.show = function(e, opt_text) {
+firebaseui.auth.ui.element.show = function(e, opt_text, ec) {
   if (opt_text) {
     goog.dom.setTextContent(e, opt_text);
   }
-  goog.dom.classlist.remove(e, 'firebaseui-hidden');
+  if (!ec) {
+    ec = e
+  }
+  goog.dom.classlist.remove(ec, 'firebaseui-hidden');
 };
 
 
@@ -187,11 +195,15 @@ firebaseui.auth.ui.element.show = function(e, opt_text) {
  * Checks if the element is shown or not. The element is considered shown if it
  * doesn't have 'firebaseui-hidden' class or 'display:none' style.
  * @param {Element} e The element to check.
+ * @param {Element} ec The container element
  * @return {boolean} True if the element is shown.
  */
-firebaseui.auth.ui.element.isShown = function(e) {
-  return !goog.dom.classlist.contains(e, 'firebaseui-hidden') &&
-      e.style.display != 'none';
+firebaseui.auth.ui.element.isShown = function(e, ec) {
+  if (!ec) {
+    ec = e
+  }
+  return !goog.dom.classlist.contains(ec, 'firebaseui-hidden') &&
+      ec.style.display != 'none';
 };
 
 

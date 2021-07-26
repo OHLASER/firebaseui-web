@@ -24,6 +24,7 @@ goog.require('firebaseui.auth.ui.element.email');
 goog.require('firebaseui.auth.ui.element.form');
 goog.require('firebaseui.auth.ui.page.Base');
 goog.require('goog.dom.selection');
+goog.require('firebaseui.auth.ui.adopter.TooltipMgr')
 goog.requireType('goog.dom.DomHelper');
 
 
@@ -60,6 +61,8 @@ firebaseui.auth.ui.page.SignIn = class extends firebaseui.auth.ui.page.Base {
         });
     this.onEmailEnter_ = onEmailEnter;
     this.onCancelClick_ = opt_onCancelClick;
+    this.emailErrorPopper_ = null
+     
   }
 
   /** @override */
@@ -67,17 +70,43 @@ firebaseui.auth.ui.page.SignIn = class extends firebaseui.auth.ui.page.Base {
     this.initEmailElement(this.onEmailEnter_);
     // Handle a click on the submit button or cancel button.
     this.initFormElement(this.onEmailEnter_, this.onCancelClick_ || undefined);
-    this.setupFocus_();
+    const emailErrContainer = this.getEmailErrorContainerElement()
+
+    const TooltipMgr = goog.module.get(
+      'firebaseui.auth.ui.adopter.TooltipMgr')
+ 
+    if (emailErrContainer) {
+      this.emailErrorPopper_ =
+        TooltipMgr.createPopper(this.getEmailElement(), emailErrContainer)
+    }
+
+    this.setupFocus_(); 
     super.enterDocument();
   }
 
   /** @override */
   disposeInternal() {
+    if (this.emailErrorPopper_) {
+      this.emailErrorPopper_.destroy()
+    }
+    this.emailErrorPopper_ = null
+ 
     this.onEmailEnter_ = null;
     this.onCancelClick_ = null;
     super.disposeInternal();
   }
-
+  /**
+   * validate and show error message
+   */
+  validateEmail(errorComponent, error, errorContainerElement) {
+    const result =firebaseui.auth.ui.element.email.validate(
+      errorComponent, error, errorContainerElement) 
+    if (!result && this.emailErrorPopper_) {
+      this.emailErrorPopper_.update()
+    }
+    return result
+  }
+ 
   /**
    * Sets up the focus order and auto focus.
    * @private
@@ -100,6 +129,8 @@ goog.mixin(
           firebaseui.auth.ui.element.email.getEmailElement,
       getEmailErrorElement:
           firebaseui.auth.ui.element.email.getEmailErrorElement,
+      getEmailErrorContainerElement:
+          firebaseui.auth.ui.element.email.getEmailErrorContainerElement,
       initEmailElement:
           firebaseui.auth.ui.element.email.initEmailElement,
       getEmail:

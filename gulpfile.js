@@ -25,8 +25,8 @@ const path = require('path');
 const sass = require('gulp-sass');
 const streamqueue = require('streamqueue');
 const util = require('gulp-util');
-
 const glob = closureBuilder.globSupport();
+const child_proc = require('child_process')
 
 // The optimization level for the JS compiler.
 // Valid levels: WHITESPACE_ONLY, SIMPLE_OPTIMIZATIONS, ADVANCED_OPTIMIZATIONS.
@@ -95,11 +95,14 @@ const DEST_DIR = 'dist';
 const DEFAULT_LOCALE = 'en';
 
 // The list of all locales that are supported.
-const ALL_LOCALES = ['ar-XB', 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'en',
+const ALL_LOCALES = [
+    'en',
+    'ar-XB'/*, 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el',
     'en-GB', 'en-XA', 'es-419', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hr', 'hu',
     'id', 'it', 'iw', 'ja', 'ko', 'lt', 'lv', 'nl', 'no', 'pl', 'pt-PT',
     'pt-BR', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'vi',
-    'zh-CN', 'zh-TW'];
+    'zh-CN', 'zh-TW'*/];
+
 
 // Default arguments to pass into Closure Compiler.
 const COMPILER_DEFAULT_ARGS = {
@@ -113,6 +116,16 @@ const TYPES_FILE = './types/index.d.ts';
 // The externs directory files.
 const EXTERNS_FILES = './externs/*.js';
 
+
+function getSoyDirectory(id) {
+  let idStr = undefined
+  if (id == '') {
+    idStr = id
+  } else {
+    idStr = `-${id}`
+  }
+  return `soy${idStr}`
+}
 
 /**
  * get soy file compile opion
@@ -129,7 +142,7 @@ function getSoyCompileOption(id) {
   const result = {
     name: 'soy_files',
     srcs: glob([
-      `soy${idStr}/*.soy`
+      `${getSoyDirectory(id)}/*.soy`
     ]),
     out: getSoyIntermidiateDirectory(id),
     options: {
@@ -213,7 +226,6 @@ function createSourceMapGenerator(
     st.on('end', function() {
       const outputLoc = wrapper.indexOf('%output%')
       if (outputLoc > 0 && sourceMap) {
-
 
         const data = fse.readFileSync(sourceMap)
         if (data) {
@@ -326,18 +338,98 @@ function getEsmModuleWrapper(output, sourceMap) {
  * @param {!Object} args Additional arguments to Closure compiler.
  * @return {*} A stream that finishes when compliation finishes.
  */
-function compile(srcs, out, args) {
+function compile(srcs, out, sourceMapName, args) {
   // Get the compiler arguments, using the defaults if not specified.
   const combinedArgs = Object.assign({}, COMPILER_DEFAULT_ARGS, args);
+  const fs = require('fs')
 
-  return gulp
-      .src(srcs)
+  let doCompile = false
+  if (fs.existsSync(out)) {
+    const outFd = fs.openSync(out)
+    const outStat = fs.fstatSync(outFd)
+    let havingNewFiles = false
+
+    const sourceFiles = glob(srcs)
+    for (let idx = 0; idx < sourceFiles.length; idx++) {
+      let elem = sourceFiles[idx]
+      const elemFd = fs.openSync(elem)
+      const elemStat = fs.fstatSync(elemFd) 
+      if (elemStat.isFile()) {
+        havingNewFiles = elemStat.mtimeMs - outStat.mtimeMs > 0
+      }
+      fs.closeSync(elemFd)
+      if (havingNewFiles) {
+        break
+      }
+    }
+    fs.closeSync(outFd) 
+    doCompile = havingNewFiles
+  } else {
+    doCompile = true
+  }
+
+  let result = undefined
+  if (doCompile) {
+    console.log(sourceMapName)
+    if (fs.existsSync(sourceMapName)) {
+      fs.unlinkSync(sourceMapName)
+    }
+    result = gulp.src(srcs)
       .pipe(closureCompiler({
         compilerPath: COMPILER_PATH,
         fileName: path.basename(out),
         compilerFlags: combinedArgs
       }))
       .pipe(gulp.dest(path.dirname(out)));
+  } else {
+    const EventEmitter = require('events')
+    result = new EventEmitter()
+    setTimeout(() => {
+      result.emit('end')
+    }) 
+  }
+  return result
+}
+
+
+function compileSoyFiles(cb, id) {
+
+  const compileOption = getSoyCompileOption(id)
+
+  const fs = require('fs')
+  let doCompile = false
+
+  for (let idx = 0; idx < compileOption.srcs.length; idx++) {
+    const source = compileOption.srcs[idx]
+    let srcPathInfo = path.parse(source)
+    let output = path.join(compileOption.out,
+      getSoyDirectory(id), `${srcPathInfo['name']}.soy.js`) 
+    if (fs.existsSync(output)) {
+      const srcFd = fs.openSync(source)
+      const srcStat = fs.fstatSync(srcFd) 
+      const outputFd = fs.openSync(output)
+      const outputStat = fs.fstatSync(outputFd) 
+      if (outputStat.isFile()) {
+        doCompile = srcStat.mtimeMs - outputStat.mtimeMs > 0
+      }
+      fs.closeSync(outputFd)
+      fs.closeSync(srcFd)
+    } else {
+      doCompile = true
+    }
+    if (doCompile) {
+      break
+    }
+  }
+
+  if (doCompile) {
+    closureBuilder.build(compileOption,
+      (erros, warnings, files, results) => {
+        cb() 
+      })
+  } else {
+    cb()
+  }
 }
 
 /**
@@ -349,8 +441,47 @@ function getLocaleForFileName(locale) {
   return locale.toLowerCase().replace(/-/g, '_');
 }
 
+function mergeXtb(cb, locale) {
+  const transPath = path.join('./', 'translations', `${locale}.xtb`) 
+  const xtbgenPath = path.join('./', 'tools', 'XtbGeneratorRunner')
+  const outputPath = path.join('./', 'translations',  `${locale}.xtb`)
 
+  let jsFiles = [] 
+  glob([
+    './javascript/**/*.js',
+    './out/**/*.js'
+  ]).forEach(elem => {
+    if (!elem.endsWith('_test.js')) {
+      jsFiles.push(elem)
+    }
+  })
+  jsFiles = jsFiles.map(elem => `--js '${elem}'`) 
 
+  const commands = [
+    `"${xtbgenPath}"`,
+    `--lang ${locale}`,
+    `--translations_file ${transPath}`,
+    `--xtb_output_file ${outputPath}`,
+    ...jsFiles
+  ]
+
+  const cmdStr = commands.join(' ')
+  child_proc.exec(cmdStr, (err, stdout, stderr) => {
+    
+    if (stderr.length > 0) {
+      console.log(stderr)
+    }
+    if (stdout.length > 0) {
+      console.log(stdout)
+    }
+
+    cb()
+  })
+}
+
+const taskNames = repeatTaskForAllLocales('merge-xtb-$', [], mergeXtb) 
+
+gulp.task('merge-xtb', gulp.parallel(taskNames))
 
 /**
  * Repeats a gulp task for all locales.
@@ -367,11 +498,15 @@ function repeatTaskForAllLocales(taskName, dependencies, operation) {
     // Convert build-js-$ to build-js-fr, for example.
     const replaceTokens = (name) => name.replace(/\$/g, locale);
     const localeTaskName = replaceTokens(taskName);
-    const localeDependencies = dependencies.map(replaceTokens);
-    gulp.task(localeTaskName, gulp.series(
-        gulp.parallel(...localeDependencies),
-        (cb) => operation(cb, locale)
-    ));
+    if (dependencies.length) {
+      const localeDependencies = dependencies.map(replaceTokens);
+      gulp.task(localeTaskName, gulp.series(
+          gulp.parallel(...localeDependencies),
+          (cb) => operation(cb, locale)
+      ));
+    } else {
+      gulp.task(localeTaskName, (cb) => operation(cb, locale))
+    }
     return localeTaskName;
   });
 }
@@ -469,9 +604,8 @@ function concatWithDeps(cb, locale, outBaseName,
     if (compilerOption) {
       Object.assign(flags, compilerOption)
     }
-
      
-    const st = compile(srcs, outputPath, flags)
+    const st = compile(srcs, outputPath, sourceMapName, flags)
     const srcMapEmitter = wrapperSetting.sourceMap(st) 
     promises.push(new Promise((resolve, reject) => {
       srcMapEmitter.once('end', () => {
@@ -555,13 +689,8 @@ function registerTasks(cssOption, id, compilerOption) {
   gulp.task(`build-css-rtl${idStr}`, (cb) => buildCss(cb, true, cssOption, id));
 
   // Compiles the Closure templates into JavaScript.
-  gulp.task(soyTaskStr, (cb) => {
-    closureBuilder.build(getSoyCompileOption(id),
-      (erros, warnings, files, results) => {
-        cb() 
-      });
+  gulp.task(soyTaskStr, cb => compileSoyFiles(cb, id))
 
-  });
 
   const uiDependencies = [soyTaskStr]
 
@@ -599,14 +728,34 @@ function registerTasks(cssOption, id, compilerOption) {
         CJS_DEPS, id, compilerOption));
 
 
-  // Builds the final JS file for the default language.
-  gulp.task(`build-js${idStr}`,
-      gulp.parallel(`build-js${idStr}-${DEFAULT_LOCALE}`));
 
 
   // Builds the final JS file for all supported languages.
   gulp.task(`build-all-js${idStr}`, 
       gulp.parallel(...buildJsTasks));
+
+  gulp.task(`build-all-series-js${idStr}`, 
+      gulp.series(...buildJsTasks));
+
+
+  gulp.task(`build-all-npm-js${idStr}`,
+      gulp.parallel(buildNpmTasks))
+
+  gulp.task(`build-all-series-npm-js${idStr}`,
+      gulp.series(buildNpmTasks))
+
+
+  gulp.task(`build-all-esm-js${idStr}`,
+      gulp.parallel(buildEsmTasks))
+
+  gulp.task(`build-all-series-esm-js${idStr}`,
+      gulp.series(buildEsmTasks))
+
+
+
+  // Builds the final JS file for the default language.
+  gulp.task(`build-js${idStr}`,
+      gulp.parallel(`build-js${idStr}-${DEFAULT_LOCALE}`));
 
   // Builds the NPM module for the default language.
   gulp.task(`build-npm${idStr}`, 
@@ -722,8 +871,10 @@ gulp.task('build-all',
       gulp.series(
         gulp.parallel('build-externs', 'build-ts'), 
         gulp.parallel('build-all-js', 'build-all-js-1'),
-        gulp.parallel('build-npm', 'build-npm-1'),
-        gulp.parallel('build-esm', 'build-esm-1')),
+        gulp.parallel('build-all-npm-js', 'build-all-npm-js-1'),
+        gulp.parallel('build-all-esm-js', 'build-all-esm-js-1'),
+        gulp.parallel('build-js', 'build-npm', 'build-esm'),
+        gulp.parallel('build-js-1', 'build-npm-1', 'build-esm-1')),
       'build-css', 'build-css-rtl', 'build-css-1', 'build-css-rtl-1'));
 
 gulp.task('build-demo', 
@@ -736,6 +887,18 @@ gulp.task('build-demo',
 gulp.task('build-demo-css', 
   gulp.parallel(
     'build-css', 'build-css-1', 'build-css-rtl', 'build-css-rtl-1'))
+
+gulp.task('build-all-series',
+  gulp.series(
+    'build-externs', 'build-ts', 
+    'build-all-series-js', 'build-all-series-js-1',
+    'build-all-series-npm-js', 'build-all-series-npm-js-1',
+    'build-all-series-esm-js', 'build-all-series-esm-js-1',
+    'build-js', 'build-npm', 'build-esm',
+    'build-js-1', 'build-npm-1', 'build-esm-1',
+    'build-css', 'build-css-rtl',
+    'build-css-1', 'build-css-rtl-1'));
+
 
 
 // vi: se ts=2 sw=2 et:

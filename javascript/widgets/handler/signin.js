@@ -42,7 +42,8 @@ firebaseui.auth.widget.handler.handleSignIn = function(
   var component = new firebaseui.auth.ui.page.SignIn(
       // On submit.
       function() {
-        firebaseui.auth.widget.handler.onSignInEmailEnter_(app, component);
+        firebaseui.auth.widget.handler.onSignInEmailEnter_(
+          app, component);
       },
       // On cancel.
       isPasswordProviderOnly ? null : function() {

@@ -50,25 +50,38 @@ element.email.getEmailErrorElement = function() {
 
 
 /**
+ * @return {Element} The error panel.
+ * @this {goog.ui.Component}
+ */
+element.email.getEmailErrorContainerElement = function() {
+  return this.getElement().querySelector('.firebaseui-error-wrapper.email')
+};
+
+
+
+/**
  * Validates the field and shows/clears the error message if necessary.
  * @param {Element} emailElement The email input.
  * @param {Element} errorElement The error panel.
+ * @param {Element} errorContainerElement the error panel
  * @return {boolean} True if the field is valid.
- * @private
  */
-element.email.validate_ = function(emailElement, errorElement) {
+element.email.validate = function(
+  emailElement, errorElement, errorContainerElement) {
   var value = element.getInputValue(emailElement) || '';
   if (!value) {
     element.setValid(emailElement, false);
-    element.show(errorElement, strings.errorMissingEmail().toString());
+    element.show(errorElement, strings.errorMissingEmail().toString(),
+      errorContainerElement);
     return false;
   } else if (!goog.format.EmailAddress.isValidAddrSpec(value)) {
     element.setValid(emailElement, false);
-    element.show(errorElement, strings.errorInvalidEmail().toString());
+    element.show(errorElement, strings.errorInvalidEmail().toString(),
+      errorContainerElement);
     return false;
   } else {
     element.setValid(emailElement, true);
-    element.hide(errorElement);
+    element.hide(errorElement, errorContainerElement);
     return true;
   }
 };
@@ -82,12 +95,14 @@ element.email.validate_ = function(emailElement, errorElement) {
  */
 element.email.initEmailElement = function(opt_onEnter) {
   var emailElement = element.email.getEmailElement.call(this);
+  const errorContainerElement = 
+    element.email.getEmailErrorContainerElement.call(this);
   var errorElement = element.email.getEmailErrorElement.call(this);
   element.listenForInputEvent(this, emailElement, function(e) {
     // Clear the error message.
-    if (element.isShown(errorElement)) {
-      element.setValid(emailElement, true);
-      element.hide(errorElement);
+    if (element.isShown(errorElement, errorContainerElement)) {
+      element.setValid(emailElement, true, errorContainerElement);
+      element.hide(errorElement, errorContainerElement);
     }
   });
   if (opt_onEnter) {
@@ -116,11 +131,23 @@ element.email.getEmail = function() {
  */
 element.email.checkAndGetEmail = function() {
   var emailElement = element.email.getEmailElement.call(this);
+  const errorContainerElement =
+    element.email.getEmailErrorContainerElement.call(this)
   var errorElement = element.email.getEmailErrorElement.call(this);
-  if (element.email.validate_(emailElement, errorElement)) {
+  let valid = false
+  if (typeof this.validateEmail === 'function') {
+    valid = this.validateEmail(
+      emailElement, errorElement, errorContainerElement)
+  } else {
+    valid = element.email.validate(
+      emailElement, errorElement, errorContainerElement)
+  }
+
+  if (valid) {
     return goog.string.trim(
         goog.asserts.assert(element.getInputValue(emailElement)));
   }
   return null;
 };
+
 });

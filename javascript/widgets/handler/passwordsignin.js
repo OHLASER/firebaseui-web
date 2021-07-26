@@ -25,6 +25,7 @@ goog.require('firebaseui.auth.widget.handler');
 goog.require('firebaseui.auth.widget.handler.common');
 
 
+
 /**
  * Handles password sign in.
  *
@@ -37,12 +38,22 @@ goog.require('firebaseui.auth.widget.handler.common');
  */
 firebaseui.auth.widget.handler.handlePasswordSignIn = function(
     app, container, opt_email, opt_displayFullTosPpMessage) {
+  const onCancel = function() {
+    component.dispose();
+    // On cancel return to widget start page.
+    firebaseui.auth.widget.handler.common.handleSignInStart(app, container);
+  };
+ 
   // Render the UI.
   var component = new firebaseui.auth.ui.page.PasswordSignIn(
       // On submit.
       function() {
-        firebaseui.auth.widget.handler.common.verifyPassword(app, component);
+        firebaseui.auth.widget.handler.common.verifyPassword(
+          app, component,
+          component.showInvalidEmail.bind(component),
+	  component.showInvalidPassword.bind(component));
       },
+      onCancel,
       // On recover password link click.
       function() {
         var email = component.getEmail();
@@ -66,3 +77,5 @@ firebaseui.auth.widget.handler.register(
     firebaseui.auth.widget.HandlerName.PASSWORD_SIGN_IN,
     /** @type {firebaseui.auth.widget.Handler} */
     (firebaseui.auth.widget.handler.handlePasswordSignIn));
+
+// vi: se ts=2 sw=2 et:

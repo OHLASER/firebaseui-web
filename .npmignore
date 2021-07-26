@@ -1,0 +1,14 @@
+/tools/
+/buildtools/
+.firebase
+
+# Generated files.
+*.log
+*.pyc
+.DS_Store
+*~
+*.swp
+
+#Local config.
+**/.firebaserc
+demo/public/config.js

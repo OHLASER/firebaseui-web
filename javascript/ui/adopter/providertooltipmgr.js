@@ -12,6 +12,8 @@ class ProviderTooltipMgr {
    */
   constructor() {
     this.popperBind = {}
+
+    
   }
 
 
@@ -21,8 +23,9 @@ class ProviderTooltipMgr {
   bind(idpsContainer,
     providerConfigs,
     injectedData) {
-    console.log('bind')
 
+    const self = this
+    this.tooltipHdlr = evt => self.onEventToShowTooltip(evt)
     const htmlElement = idpsContainer.getContentElement()
     providerConfigs.forEach(elem => {
       const providerId = elem.providerId
@@ -39,7 +42,6 @@ class ProviderTooltipMgr {
 
       const provElem = htmlElement.querySelector(
         `.tooltip-owner[data-provider-id="${providerId}"]`)
-      console.log(`prov: ${provElem}`)
 
       if (provElem) {
         const tooltipElem = goog.soy.renderAsElement(
@@ -52,27 +54,48 @@ class ProviderTooltipMgr {
     })
   }
 
+  /**
+   * bind popper
+   */
   bindPopper(provElem, tooltipElement) {
-    this.popperBind[provElem.dataset['providerId']] = Popper.createPopper(
-      provElem, tooltipElement) 
-
+    const instance = Popper.createPopper(
+      provElem, tooltipElement)
+    this.popperBind[provElem.dataset['providerId']] = instance
+    provElem.addEventListener('mouseenter', this.tooltipHdlr)
+    provElem.addEventListener('mouseleave', this.tooltipHdlr)
   }
-
-
-
 
   /**
    * detach tooltip from each id provider user interface.
    */
   unbind(idpsContainer) {
-    idpsContainer.getElementsByClass(
-      'firebaseui-id-idp-button').forEach(elem => {
-      console.log(`target: $elem`)
-    })
-
-    console.log('unbind')
+    for (let key in this.popperBind) {
+      const instance = this.popperBind[key]
+      instance.state.elements.reference.removeEventListener(
+        'mouseenter', this.tooltipHdlr)
+      instance.state.elements.reference.removeEventListener(
+        'mouseleave', this.tooltipHdlr) 
+      instance.destroy()
+    }
+    delete this.tooltipHdlr
   }
-  
+
+
+  /**
+   * handle event to show tooltip or hide
+   */
+  onEventToShowTooltip(event) {
+    const instance = this.popperBind[
+      event.currentTarget.dataset['providerId']] 
+    if (instance) {
+      const popper = instance.state.elements.popper      
+      if (event.type == 'mouseenter') {
+        popper.classList.add('show')
+      } else {
+        popper.classList.remove('show')
+      }
+    }
+  }
 }
 
 

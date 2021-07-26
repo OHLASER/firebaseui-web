@@ -8,7 +8,8 @@
       providerId: string, 
       providerName: string|null,
       fullLabel: string| null]}
-  <div class="tooltip">
+  <div class="tooltip firebaseui">
+    <div class="tooltip-inner">
     {if $providerConfig.providerId == 'password'}
       {if $providerConfig.fullLabel}
         {$providerConfig.fullLabel}
@@ -55,6 +56,7 @@
         {/msg}
       {/if}
     {/if}
+    </div>
   </div>
 {/template}
 

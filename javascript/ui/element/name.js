@@ -39,12 +39,20 @@ element.name.getNameElement = function() {
 
 
 /**
- * @return {Element} The error panel.
+ * @return {Element} The error message.
  * @this {goog.ui.Component}
  */
 element.name.getNameErrorElement = function() {
   return this.getElementByClass('firebaseui-id-name-error');
 };
+
+/**
+ * @return {Element} the error message container
+ * @this {goog.ui.Component}
+ */
+element.name.getNameErrorContainerElement = function() {
+  return this.getElement().querySelector('.firebaseui-error-wrapper.name')
+}
 
 
 /**
@@ -54,16 +62,18 @@ element.name.getNameErrorElement = function() {
  * @return {boolean} True if the field is valid.
  * @private
  */
-element.name.validate_ = function(nameElement, errorElement) {
+element.name.validate = function(nameElement, errorElement,
+  errorContainerElement) {
   var valid = !goog.string.isEmptyOrWhitespace(goog.string.makeSafe(
       element.getInputValue(nameElement)));
   element.setValid(nameElement, valid);
   if (valid) {
-    element.hide(errorElement);
+    element.hide(errorElement, errorContainerElement);
     return true;
   } else {
     element.show(errorElement,
-        firebaseui.auth.soy2.strings.errorMissingName().toString());
+      firebaseui.auth.soy2.strings.errorMissingName().toString(),
+      errorContainerElement);
     return false;
   }
 };
@@ -73,16 +83,23 @@ element.name.validate_ = function(nameElement, errorElement) {
  * Initializes the name element.
  * @this {goog.ui.Component}
  */
-element.name.initNameElement = function() {
+element.name.initNameElement = function(opt_onEnter) {
   var nameElement = element.name.getNameElement.call(this);
   var errorElement = element.name.getNameErrorElement.call(this);
+
+  const errorContainer = element.name.getNameErrorContainerElement.call(this)
   element.listenForInputEvent(this, nameElement, function(e) {
     // Clear but not show error on-the-fly.
-    if (element.isShown(errorElement)) {
+    if (element.isShown(errorElement, errorContainer)) {
       element.setValid(nameElement, true);
-      element.hide(errorElement);
+      element.hide(errorElement, errorContainer);
     }
   });
+  if (opt_onEnter) {
+    element.listenForEnterEvent(this, nameElement, function(e) {
+      opt_onEnter()
+    })
+  }
 };
 
 
@@ -95,7 +112,17 @@ element.name.initNameElement = function() {
 element.name.checkAndGetName = function() {
   var nameElement = element.name.getNameElement.call(this);
   var errorElement = element.name.getNameErrorElement.call(this);
-  if (element.name.validate_(nameElement, errorElement)) {
+  const errorContainerElement = 
+    element.name.getNameErrorContainerElement.call(this)
+  let valid = false
+  if (typeof this.validateName  === 'function') {
+    valid = this.validateName( 
+      nameElement, errorElement, errorContainerElement)
+  } else {
+    valid = element.name.validate(
+      nameElement, errorElement, errorContainerElement)
+  }
+  if (valid) {
     return goog.string.trim(
         goog.asserts.assert(element.getInputValue(nameElement)));
   }
