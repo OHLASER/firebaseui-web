@@ -33,7 +33,10 @@
       </div>
       <div class="firebaseui-card-content">
         <div class="firebaseui-relative-wrapper">
-          {call firebaseui.auth.soy2.element.email data="all" /}
+          {call firebaseui.auth.soy2.element.email }
+            {param email: $email /}
+            {param placeholder: 'your-name@example.com' /}
+          {/call}
         </div>
       </div>
       <div class="firebaseui-card-actions">
@@ -46,9 +49,7 @@
       </div>
       <div class="firebaseui-card-footer">
         {if $displayFullTosPpMessage}
-          {call firebaseui.auth.soy2.element.fullMessageTosPp data="all" /}
         {else}
-          {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
         {/if}
       </div>
     </form>
@@ -68,23 +69,22 @@
         <h1 class="firebaseui-title">{msg desc="Header of a sign-in page."}Sign in{/msg}</h1>
       </div>
       <div class="firebaseui-card-content">
-        {call firebaseui.auth.soy2.element.email data="all" /}
+        {call firebaseui.auth.soy2.element.email}
+          {param email: $email /}
+          {param disabled: true /}
+        {/call}
         {call firebaseui.auth.soy2.element.password /}
       </div>
       <div class="firebaseui-card-actions">
-        <div class="firebaseui-form-links">
-          {call firebaseui.auth.soy2.element.passwordRecoveryButton /}
-        </div>
         <div class="firebaseui-form-actions">
+           {call firebaseui.auth.soy2.element.recoverPasswordButton /}
            {call firebaseui.auth.soy2.element.cancelButton /}
            {call firebaseui.auth.soy2.element.signInButton /}
         </div>
       </div>
       <div class="firebaseui-card-footer">
         {if $displayFullTosPpMessage}
-          {call firebaseui.auth.soy2.element.fullMessageTosPp data="all" /}
         {else}
-          {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
         {/if}
       </div>
     </form>
@@ -109,7 +109,10 @@
         </h1>
       </div>
       <div class="firebaseui-card-content">
-        {call firebaseui.auth.soy2.element.email data="all" /}
+        {call firebaseui.auth.soy2.element.email}
+          {param email: $email /}
+          {param disabled: true /}
+        {/call}
         {if $requireDisplayName}
           {call firebaseui.auth.soy2.element.name data="all" /}
         {/if}
@@ -120,14 +123,12 @@
           {if $allowCancel}
             {call firebaseui.auth.soy2.element.cancelButton /}
           {/if}
-          {call firebaseui.auth.soy2.element.saveButton /}
+          {call firebaseui.auth.soy2.element.createButton /}
         </div>
       </div>
       <div class="firebaseui-card-footer">
         {if $displayFullTosPpMessage}
-          {call firebaseui.auth.soy2.element.fullMessageTosPp data="all" /}
         {else}
-          {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
         {/if}
       </div>
     </form>
@@ -154,7 +155,10 @@
             Get instructions sent to this email that explain how to reset your password
           {/msg}
         </p>
-        {call firebaseui.auth.soy2.element.email data="all" /}
+        {call firebaseui.auth.soy2.element.email }
+          {param email: $email /} 
+          {param disabled: true /}
+        {/call}
       </div>
       <div class="firebaseui-card-actions">
         <div class="firebaseui-form-actions">
@@ -170,9 +174,7 @@
           {/call}
         </div>
       </div>
-      <div class="firebaseui-card-footer">
-        {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
-      </div>
+      <div class="firebaseui-card-footer"></div>
     </form>
   </div>
 {/template}
@@ -213,9 +215,7 @@
         </div>
       {/if}
     </div>
-    <div class="firebaseui-card-footer">
-      {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
-    </div>
+    <div class="firebaseui-card-footer"></div>
   </div>
 {/template}
 
@@ -642,7 +642,8 @@
   {@param? providerConfig: [providerId:string|null, providerName:string|null, fullLabel:string|null,
       buttonColor:string|null, iconUrl: string|null]} /** The IdP provider config. */
   {let $idpDisplayName kind="text"}{call firebaseui.auth.soy2.element.idpName data="all" /}{/let}
-  <div class="mdl-card mdl-shadow--2dp firebaseui-container firebaseui-id-page-federated-linking">
+  <div class="mdl-card mdl-shadow--2dp firebaseui-container{sp}
+    firebaseui-id-page-federated-linking">
     <form onsubmit="return false;">
       <div class="firebaseui-card-header">
         <h1 class="firebaseui-title">{msg desc="Header of a sign-in page."}Sign in{/msg}</h1>
@@ -673,9 +674,7 @@
           {/call}
         </div>
       </div>
-      <div class="firebaseui-card-footer">
-        {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
-      </div>
+      <div class="firebaseui-card-footer"></div>
     </form>
   </div>
 {/template}
@@ -1288,9 +1287,36 @@
         </div>
       </div>
       <div class="firebaseui-card-footer">
-        {call firebaseui.auth.soy2.element.tosPpLink data="all" /}
       </div>
     </form>
+  </div>
+{/template}
+
+/**
+ * Renders the list of supported sign-in providers.
+ */
+{template .radioProviderSignIn}
+  {@param providerConfigs: list<[providerId:string, widgetId:string, providerName:string|null, fullLabel:string|null,
+      buttonColor:string|null, iconUrl: string|null]>} /** List of supported IdP configs. */
+  <div class="firebaseui-container firebaseui-page-provider-sign-in{sp}
+      firebaseui-id-page-provider-sign-in firebaseui-use-spinner">
+    <div class="firebaseui-card-content">
+      <div tabindex="0" class="firebaseui-idp-container">
+        {foreach $providerConfig in $providerConfigs}
+          {call firebaseui.auth.soy2.element.idpButton}
+            {param providerConfig: $providerConfig /}
+            {param radioButton: true /}
+          {/call}
+        {/foreach}
+      </div>
+      <div class="firebaseui-idp-commands">
+        {call firebaseui.auth.soy2.element.idpSignIn}
+        {/call}
+      </div>
+    </div>
+    <div class="firebaseui-card-footer firebaseui-provider-sign-in-footer">
+      {call firebaseui.auth.soy2.element.fullMessageTosPp data="all" /}
+    </div>
   </div>
 {/template}
 
@@ -1310,10 +1336,6 @@
             {param providerConfig: $providerConfig /}
           {/call}
         {/foreach}
-      </div>
-      <div class="firebaseui-idp-commands">
-        {call firebaseui.auth.soy2.element.idpSignIn}
-        {/call}
       </div>
     </div>
     <div class="firebaseui-card-footer firebaseui-provider-sign-in-footer">

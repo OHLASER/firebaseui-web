@@ -23,6 +23,7 @@ goog.require('firebaseui.auth.ui.element');
 goog.require('firebaseui.auth.ui.element.email');
 goog.require('firebaseui.auth.ui.element.form');
 goog.require('firebaseui.auth.ui.page.Base');
+goog.require('firebaseui.auth.ui.adopter.TooltipMgr')
 goog.requireType('goog.dom.DomHelper');
 
 
@@ -55,24 +56,63 @@ firebaseui.auth.ui.page.PasswordRecovery =
         });
     this.onSubmitClick_ = onSubmitClick;
     this.onCancelClick_ = opt_onCancelClick;
+    this.emailErrorPopper_ = null
   }
 
   /** @override */
   enterDocument() {
+    const emailErrContainer = this.getEmailErrorContainerElement()
     this.initEmailElement();
     this.initFormElement(this.onSubmitClick_, this.onCancelClick_);
     if (!firebaseui.auth.ui.element.getInputValue(this.getEmailElement())) {
       this.getEmailElement().focus();
     }
     this.submitOnEnter(this.getEmailElement(), this.onSubmitClick_);
+    const TooltipMgr = goog.module.get(
+      'firebaseui.auth.ui.adopter.TooltipMgr')
+    if (emailErrContainer) {
+      this.emailErrorPopper_ =
+        TooltipMgr.createPopper(this.getEmailElement(),
+          emailErrContainer)
+    }
     super.enterDocument();
   }
 
   /** @override */
   disposeInternal() {
+    if (this.emailErrorPopper_) {
+      this.emailErrorPopper_.destroy()
+    }
+    this.emailErrorPopper_ = null
     this.onSubmitClick_ = null;
     this.onCancelClick_ = null;
     super.disposeInternal();
+  }
+  /**
+   * validate email or show error message
+   */
+  validateEmail(errorComponent, error, errorContainerElement) {
+    const result = firebaseui.auth.ui.element.email.validate(
+      errorComponent, error, errorContainerElement) 
+    if (!result && this.emailErrorPopper_) {
+      this.emailErrorPopper_.update()
+    }
+    return result
+  }
+
+  /**
+   * show or hide error about email
+   */
+  async showInvalidEmail(error) {
+    firebaseui.auth.ui.element.setValid(this.getEmailElement(), false);
+    const errorMsg = firebaseui.auth.widget.handler.common.getErrorMessage(
+      error)
+    const errElement = this.getEmailErrorElement()
+    const errContainer = this.getEmailErrorContainerElement()
+    firebaseui.auth.ui.element.show(errElement, errorMsg, errContainer);
+    if (errorMsg && this.emailErrorPopper_) {
+      await this.emailErrorPopper_.update()
+    }
   }
 };
 
@@ -86,6 +126,8 @@ goog.mixin(
           firebaseui.auth.ui.element.email.getEmailElement,
       getEmailErrorElement:
           firebaseui.auth.ui.element.email.getEmailErrorElement,
+      getEmailErrorContainerElement:
+          firebaseui.auth.ui.element.email.getEmailErrorContainerElement,
       initEmailElement:
           firebaseui.auth.ui.element.email.initEmailElement,
       getEmail:

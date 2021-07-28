@@ -30,7 +30,7 @@ class PasswordRecovery {
   bind(recoveryOwner, handler) {
     this.recoveryOwner = recoveryOwner
 
-    this.recoverHdlr = e => {
+    this.recoveryHdlr = e => {
       handler(e)
     }
 
@@ -53,6 +53,5 @@ class PasswordRecovery {
 }
 
 
-export { PasswordRecoverry as default }
-
+exports = PasswordRecovery 
 // vi: se ts=2 sw=2 et:

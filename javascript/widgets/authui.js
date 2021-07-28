@@ -78,6 +78,8 @@ goog.require('firebaseui.auth.widget.handler.handlePrefilledEmailSignIn');
 /** @suppress {extraRequire} */
 goog.require('firebaseui.auth.widget.handler.handleProviderSignIn');
 /** @suppress {extraRequire} */
+goog.require('firebaseui.auth.widget.handler.handleRadioProviderSignIn');
+//** @suppress {extraRequire} */
 goog.require('firebaseui.auth.widget.handler.handleSendEmailLinkForSignIn');
 /** @suppress {extraRequire} */
 goog.require('firebaseui.auth.widget.handler.handleSignIn');

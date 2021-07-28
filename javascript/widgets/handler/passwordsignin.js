@@ -51,7 +51,7 @@ firebaseui.auth.widget.handler.handlePasswordSignIn = function(
         firebaseui.auth.widget.handler.common.verifyPassword(
           app, component,
           component.showInvalidEmail.bind(component),
-	  component.showInvalidPassword.bind(component));
+          component.showInvalidPassword.bind(component));
       },
       onCancel,
       // On recover password link click.

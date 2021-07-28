@@ -32,6 +32,15 @@ const utils = goog.require('goog.uri.utils');
 
 /** Application configuration settings. */
 class Config {
+
+
+  /**
+   * provider sign in type
+   */
+  get providerSignInType() {
+    return this.config_.get('providerSignInType') 
+  }
+
   constructor() {
     /** @const @private {!AuthConfig} The AuthUI config object. */
     this.config_ = new AuthConfig();
@@ -58,6 +67,7 @@ class Config {
     this.config_.define('immediateFederatedRedirect', false);
     this.config_.define('popupMode', false);
     this.config_.define('privacyPolicyUrl');
+    this.config_.define('providerSignInType');
     /** Determines the redirect URL query key. */
     this.config_.define(
         'queryParameterForSignInSuccessUrl', 'signInSuccessUrl');
@@ -967,3 +977,4 @@ const BLACKLISTED_RECAPTCHA_KEYS = [
   'sitekey', 'tabindex', 'callback', 'expired-callback'];
 
 exports = Config;
+// vi: se ts=2 sw=2 et:

@@ -80,6 +80,7 @@ function getUiConfig() {
       },
       firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
     ],
+    // providerSignInType: 'radioProviderSignIn',
     // Terms of service url.
     'tosUrl': 'https://www.google.com',
     // Privacy policy url.
@@ -246,3 +247,4 @@ var initApp = function() {
 };
 
 window.addEventListener('load', initApp);
+// vi: se ts=2 sw=2 et:

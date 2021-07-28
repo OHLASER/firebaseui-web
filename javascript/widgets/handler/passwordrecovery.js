@@ -105,12 +105,16 @@ firebaseui.auth.widget.handler.onPasswordRecoverySubmit_ =
     // Set current UI component.
     app.setCurrentComponent(noticeComponent);
   };
-  var emailSentFailedCallback = function(error) {
-    firebaseui.auth.ui.element.setValid(component.getEmailElement(), false);
-    firebaseui.auth.ui.element.show(component.getEmailErrorElement(),
-        firebaseui.auth.widget.handler.common.getErrorMessage(error));
-  };
-
+  let emailSentFailedCallback = undefined
+  if (typeof component.showInvalidEmail === 'function') {
+    emailSentFailedCallback = component.showInvalidEmail.bind(component) 
+  } else {
+    emailSentFailedCallback = function(error) {
+      firebaseui.auth.ui.element.setValid(component.getEmailElement(), false);
+      firebaseui.auth.ui.element.show(component.getEmailErrorElement(),
+          firebaseui.auth.widget.handler.common.getErrorMessage(error));
+    };
+  }
 
   app.registerPending(component.executePromiseRequest(
       /** @type {function (): !goog.Promise} */ (
@@ -125,3 +129,5 @@ firebaseui.auth.widget.handler.register(
     firebaseui.auth.widget.HandlerName.PASSWORD_RECOVERY,
     /** @type {firebaseui.auth.widget.Handler} */
     (firebaseui.auth.widget.handler.handlePasswordRecovery));
+
+// vi: se ts=2 sw=2 et:

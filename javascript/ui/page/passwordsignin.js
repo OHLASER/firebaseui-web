@@ -25,7 +25,7 @@ goog.require('firebaseui.auth.ui.element.form');
 goog.require('firebaseui.auth.ui.element.password');
 goog.require('firebaseui.auth.ui.page.Base');
 goog.require('firebaseui.auth.ui.adopter.TooltipMgr')
-goog.require('firebaseui.auth.element.PasswordRecovery')
+goog.require('firebaseui.auth.ui.element.PasswordRecovery')
 goog.requireType('goog.dom.DomHelper');
 
 
@@ -62,7 +62,7 @@ firebaseui.auth.ui.page.PasswordSignIn =
         });
     this.onSubmitClick_ = onSubmitClick;
     this.onForgotClick_ = onForgotClick;
-    this.onCancelClick_ = onCacelClick
+    this.onCancelClick_ = onCancelClick
 
     this.passwordRecovery_ = null
 
@@ -91,9 +91,9 @@ firebaseui.auth.ui.page.PasswordSignIn =
     }
 
     const PasswordRecovery = goog.module.get(
-      'firebaseui.auth.element.PasswordRecovery')
+      'firebaseui.auth.ui.element.PasswordRecovery')
     this.passwordRecovery_ = new PasswordRecovery()
-    this.passwordRecovery_.bind()
+    this.passwordRecovery_.bind(this.getElement(), this.onForgotClick_)
 
     const TooltipMgr = goog.module.get(
       'firebaseui.auth.ui.adopter.TooltipMgr')
@@ -160,7 +160,7 @@ firebaseui.auth.ui.page.PasswordSignIn =
     firebaseui.auth.ui.element.setValid(this.getEmailElement(), false);
     const errorMsg = firebaseui.auth.widget.handler.common.getErrorMessage(
       error)
-    const errElement = this.getEmaildErrorElement()
+    const errElement = this.getEmailErrorElement()
     const errContainer = this.getEmailErrorContainerElement()
     firebaseui.auth.ui.element.show(errElement, errorMsg, errContainer);
     if (errorMsg && this.emailErrorPopper_) {

@@ -989,8 +989,14 @@ firebaseui.auth.widget.handler.common.handleSignInStart = function(
   } else {
     // For all other cases, show the provider sign-in screen along with any
     // info bar messages that need to be shown to the user.
+    
+    let signInType = app.getConfig().providerSignInType
+    if (!signInType) {
+      signInType = firebaseui.auth.widget.HandlerName.PROVIDER_SIGN_IN
+    }
+
     firebaseui.auth.widget.handler.handle(
-        firebaseui.auth.widget.HandlerName.PROVIDER_SIGN_IN,
+        signInType, 
         app,
         container,
         infoBarMessage,
@@ -1228,3 +1234,4 @@ firebaseui.auth.widget.handler.common.handleSignInWithEmail =
         container);
   }
 };
+// vi: se ts=2 sw=2 et:

@@ -370,7 +370,6 @@ function compile(srcs, out, sourceMapName, args) {
 
   let result = undefined
   if (doCompile) {
-    console.log(sourceMapName)
     if (fs.existsSync(sourceMapName)) {
       fs.unlinkSync(sourceMapName)
     }

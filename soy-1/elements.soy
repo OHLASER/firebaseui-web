@@ -24,6 +24,7 @@
   {@param? email: string} /** The email address to prefill. */
   {@param? disabled: bool} /** Whether the email input is disabled or not. */
   {@param? changeEmail: bool} /** Whether to use change email label. */
+  {@param? placeholder: string} /** placeholder */
   <div class="firebaseui-textfield mdl-textfield mdl-js-textfield{sp}
     mdl-textfield--floating-label firebaseui-email-container">
     <label class="mdl-textfield__label firebaseui-label" for="ui-sign-in-email-input">
@@ -40,6 +41,9 @@
         autocomplete="username"
         class="mdl-textfield__input firebaseui-input firebaseui-id-email"
         value="{$email ?: ''}"
+        {if $placeholder != ''}
+          placeholder="{$placeholder}"
+        {/if}
         {if $disabled}disabled{/if}>
   </div>
   <div class="firebaseui-error-wrapper firebaseui-hidden email">
@@ -126,8 +130,16 @@
 {template .idpButton}
   {@param? providerConfig: [providerId:string, providerName:string|null, 
       iconUrl: string|null]} /** The IdP provider config. */
+  {@param? radioButton: bool} /* radio button sign in. */
     <div 
-      class="tooltip-owner firebaseui-idp-button firebaseui-idp-radio {call .idpClass_ data="all"/}" data-provider-id="{$providerConfig.providerId}">
+      class="tooltip-owner firebaseui-idp-button{sp} 
+        {if $radioButton}
+          firebaseui-idp-radio{sp}
+        {else}
+          firebaseui-id-idp-button{sp} 
+        {/if}
+        {call .idpClass_ data="all"/}"
+        data-provider-id="{$providerConfig.providerId}">
 
       {if $providerConfig.providerId == 'password'}
         {if $providerConfig.providerName}
@@ -253,6 +265,21 @@
   {/call}
 {/template}
 
+/**
+ * Renders a create button.
+ */
+{template .createButton}
+  {call .submitButton}
+    {param label kind="text"}
+      {msg desc="The submit button for a form that changes the state of the user
+          (e.g. creating an account, resetting the password, etc.)."}
+        Create 
+      {/msg}
+    {/param}
+  {/call}
+{/template}
+
+
 
 /**
  * Renders a continue button.
@@ -374,6 +401,16 @@
     href="javascript:void(0)">
     {msg desc="Label of the password recovery link"}Trouble signing in?{/msg}
   </a>
+{/template}
+
+/**
+ * Renders the recovery button.
+ */
+{template .recoverPasswordButton}
+  <button class="firebaseui-forgot-password firebaseui-button{sp}
+    mdl-button mdl-js-button mdl-button--primary">
+    {msg desc="recover password."}Recover{/msg}
+  </button>
 {/template}
 
 

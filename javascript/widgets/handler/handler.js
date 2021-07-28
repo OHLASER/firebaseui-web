@@ -55,6 +55,7 @@ firebaseui.auth.widget.HandlerName = {
   PASSWORD_RESET: 'passwordReset',
   EMAIL_MISMATCH: 'emailMismatch',
   PROVIDER_SIGN_IN: 'providerSignIn',
+  RADIO_PROVIDER_SIGN_IN: 'radioProviderSignIn',
   PREFILLED_EMAIL_SIGN_IN: 'prefilledEmailSignIn',
   UNAUTHORIZED_USER: 'handleUnauthorizedUser',
   UNSUPPORTED_PROVIDER: 'unsupportedProvider',
