@@ -82,9 +82,13 @@ function getUiConfig() {
     ],
     // providerSignInType: 'radioProviderSignIn',
     // Terms of service url.
-    'tosUrl': 'https://www.google.com',
+    'tosUrl': function() {
+      console.log('tosUrl')
+    },
     // Privacy policy url.
-    'privacyPolicyUrl': 'https://www.google.com',
+    'privacyPolicyUrl': function() {
+      console.log('privacyPolicy url')
+    },
     'credentialHelper': CLIENT_ID && CLIENT_ID != 'YOUR_OAUTH_CLIENT_ID' ?
         firebaseui.auth.CredentialHelper.GOOGLE_YOLO :
         firebaseui.auth.CredentialHelper.NONE

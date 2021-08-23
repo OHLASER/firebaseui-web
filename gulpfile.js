@@ -97,11 +97,11 @@ const DEFAULT_LOCALE = 'en';
 // The list of all locales that are supported.
 const ALL_LOCALES = [
     'en',
-    'ar-XB'/*, 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el',
+    'ar-XB', 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el',
     'en-GB', 'en-XA', 'es-419', 'es', 'fa', 'fi', 'fil', 'fr', 'hi', 'hr', 'hu',
     'id', 'it', 'iw', 'ja', 'ko', 'lt', 'lv', 'nl', 'no', 'pl', 'pt-PT',
     'pt-BR', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'th', 'tr', 'uk', 'vi',
-    'zh-CN', 'zh-TW'*/];
+    'zh-CN', 'zh-TW'];
 
 
 // Default arguments to pass into Closure Compiler.
@@ -116,6 +116,7 @@ const TYPES_FILE = './types/index.d.ts';
 // The externs directory files.
 const EXTERNS_FILES = './externs/*.js';
 
+const TRANSLATIONS_PROJECT_ID = 'FirebaseUI'
 
 function getSoyDirectory(id) {
   let idStr = undefined
@@ -362,6 +363,13 @@ function compile(srcs, out, sourceMapName, args) {
         break
       }
     }
+    
+    if (!havingNewFiles && args.translations_file) {
+      const transFd = fs.openSync(args.translations_file)
+      const transStat = fs.fstatSync(transFd)
+      havingNewFiles = transStat.mtimeMs - outStat.mtimeMs > 0
+      fs.closeSync(transFd)
+    }
     fs.closeSync(outFd) 
     doCompile = havingNewFiles
   } else {
@@ -459,6 +467,7 @@ function mergeXtb(cb, locale) {
   const commands = [
     `"${xtbgenPath}"`,
     `--lang ${locale}`,
+    `--projectId ${TRANSLATIONS_PROJECT_ID}`,
     `--translations_file ${transPath}`,
     `--xtb_output_file ${outputPath}`,
     ...jsFiles
@@ -528,7 +537,7 @@ function getFireBaseCompilationFlags(
     generate_exports: true,
 
     // This is required to match XTB IDs to the JS/Soy messages.
-    translations_project: 'FirebaseUI'
+    translations_project: TRANSLATIONS_PROJECT_ID
   };
 
   if (OPTIMIZATION_LEVEL == 'WHITESPACE_ONLY') {

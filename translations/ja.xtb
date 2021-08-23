@@ -920,4 +920,7 @@
 	<translation id="5467611163472768048" key="MSG_967_YE_0" source="./javascript/data/country.js:702" desc="The name of the country/territory &quot;Yemen&quot;.">イエメン</translation>
 	<translation id="1121024275220128970" key="MSG_260_ZM_0" source="./javascript/data/country.js:704" desc="The name of the country/territory &quot;Zambia&quot;.">ザンビア</translation>
 	<translation id="8820818635461492732" key="MSG_263_ZW_0" source="./javascript/data/country.js:706" desc="The name of the country/territory &quot;Zimbabwe&quot;.">ジンバブエ</translation>
+	<translation id="5862863156499983740" key="MSG_1OZJSUPXQNQRV" source="./out/soy-1/elements.soy.js:327" desc="The submit button for a form that changes the state of the user (e.g. creating an account, resetting the password, etc.).">作成</translation>
+	<translation id="4290290330216341496" key="MSG_1PIGM8MEGGJI8" source="./out/soy-1/elements.soy.js:475" desc="recover password.">復旧</translation>
+	<translation id="5664118616900466210" key="MSG_1QJ648H3EMUB2" source="./out/soy/elements.soy.js:856" desc="Label for a button to sign in to a tenant. The short version"><ph name="DISPLAY_NAME" /></translation>
 </translationbundle>
