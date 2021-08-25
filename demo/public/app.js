@@ -59,7 +59,7 @@ function getUiConfig() {
       {
         provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
         // Whether the display name should be displayed in Sign Up page.
-        requireDisplayName: true,
+        requireDisplayName: false,
         signInMethod: getEmailSignInMethod(),
         disableSignUp: {
           status: getDisableSignUpStatus()
